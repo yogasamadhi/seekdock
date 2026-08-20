@@ -1,7 +1,7 @@
 import { relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { net, protocol } from "electron";
-import { createDevelopmentProxyRequest } from "./shell-proxy";
+import { fetchDevelopmentShellRequest } from "./shell-proxy";
 
 export const SHELL_URL = "seekdock://shell/index.html";
 
@@ -39,7 +39,9 @@ export function handleShellProtocol(
     if (pathname === "/" || pathname === "") pathname = "/index.html";
 
     if (developmentUrl) {
-      return net.fetch(createDevelopmentProxyRequest(request, developmentUrl));
+      return fetchDevelopmentShellRequest(request, developmentUrl, (upstream) =>
+        net.fetch(upstream),
+      );
     }
 
     const target = resolve(rendererDirectory, `.${pathname}`);

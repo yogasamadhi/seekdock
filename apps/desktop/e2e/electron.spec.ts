@@ -82,6 +82,7 @@ test("loads DSH, enforces external navigation, and recovers after a runtime cras
     );
     expect(log).toContain("DeepSeek Harness is ready");
     expect(log).toContain("exited unexpectedly");
+    expect(log).not.toContain("opening the default browser");
   } finally {
     await electronApp?.close();
     rmSync(testRoot, { recursive: true, force: true });
@@ -89,7 +90,7 @@ test("loads DSH, enforces external navigation, and recovers after a runtime cras
 });
 
 async function assertDshWebUi(page: Page): Promise<void> {
-  await expect(page).toHaveTitle("DeepSeek Harness");
+  await expect(page).toHaveTitle("DSH Local Build");
   await expect(page.locator("#root")).toBeAttached();
   await expect(
     page.getByRole("button", { name: "新建会话" }).first(),

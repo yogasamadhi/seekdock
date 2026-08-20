@@ -1,8 +1,12 @@
 const READY_PREFIX = "dsh web: ";
 const READY_PATTERN = /^dsh web: (http:\/\/127\.0\.0\.1:(\d{1,5}))$/u;
+const URL_LIKE_PATTERN = /^[a-z][a-z0-9+.-]*:\/\//iu;
 
 export function parseDshReadyLine(line: string): URL | undefined {
   if (!line.startsWith(READY_PREFIX)) return undefined;
+
+  const value = line.slice(READY_PREFIX.length);
+  if (!URL_LIKE_PATTERN.test(value)) return undefined;
 
   const match = READY_PATTERN.exec(line);
   if (!match) {

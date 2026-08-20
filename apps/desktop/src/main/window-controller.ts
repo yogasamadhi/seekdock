@@ -16,7 +16,7 @@ export class WindowController {
     private readonly logger: RuntimeLogger,
   ) {
     supervisor.on("failure", (failure: RuntimeFailure) => {
-      void this.showFailure(failure.error);
+      if (failure.unexpectedExit) void this.showFailure(failure.error);
     });
   }
 

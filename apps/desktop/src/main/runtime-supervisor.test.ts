@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { RuntimeLogger } from "./logger";
 import {
   buildElectronNodeEnvironment,
+  buildDshArguments,
   DshRuntimeSupervisor,
   type RuntimeFailure,
 } from "./runtime-supervisor";
@@ -71,6 +72,18 @@ function createSupervisor(spawn: () => ChildProcess, startupTimeoutMs = 100) {
 }
 
 describe("DshRuntimeSupervisor", () => {
+  it("starts DSH Web without handing the URL to a system browser", () => {
+    expect(buildDshArguments("/runtime/dsh/lib/bin.js")).toEqual([
+      "/runtime/dsh/lib/bin.js",
+      "web",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "0",
+      "--no-open",
+    ]);
+  });
+
   it("starts the DSH child in Electron's Node mode", () => {
     expect(
       buildElectronNodeEnvironment({ SEEKDOCK_TEST_VALUE: "kept" }),

@@ -10,6 +10,23 @@ describe("DSH readiness URL parsing", () => {
     ).toEqual(["http://127.0.0.1:43127"]);
   });
 
+  it("ignores DSH web status messages after the readiness URL", () => {
+    const decoder = new DshReadyLineDecoder();
+    expect(
+      decoder
+        .push(
+          "dsh web: http://127.0.0.1:43128\n" +
+            "dsh web: opening the default browser; pass --no-open to disable\n",
+        )
+        .map((url) => url.origin),
+    ).toEqual(["http://127.0.0.1:43128"]);
+    expect(
+      parseDshReadyLine(
+        "dsh web: opening the default browser; pass --no-open to disable",
+      ),
+    ).toBeUndefined();
+  });
+
   it("accepts only the exact IPv4 loopback form", () => {
     expect(parseDshReadyLine("ordinary log line")).toBeUndefined();
     expect(() => parseDshReadyLine("dsh web: http://localhost:1234")).toThrow(
