@@ -12,6 +12,9 @@ import {
   assertBunVersion,
   DSH_COMMIT,
   dshRoot,
+  PI_COMMIT,
+  PI_VERSION,
+  piRoot,
   repositoryRoot,
 } from "./constants.mjs";
 import { capture, run } from "./process.mjs";
@@ -34,7 +37,27 @@ if (typeof electronExecutable !== "string" || !existsSync(electronExecutable)) {
   throw new Error("The Electron executable is not installed");
 }
 
-await assertSubmodule(dshRoot, DSH_COMMIT, "DeepSeek Harness");
+await Promise.all([
+  assertSubmodule(dshRoot, DSH_COMMIT, "DeepSeek Harness"),
+  assertSubmodule(piRoot, PI_COMMIT, "Pi"),
+]);
+const piRuntimePackages = {
+  "@earendil-works/pi-agent-core": {
+    sourceManifest: resolve(piRoot, "packages/agent/package.json"),
+    ownerManifest: resolve(
+      dshRoot,
+      "packages/core/agent-backend-pi/package.json",
+    ),
+  },
+  "@earendil-works/pi-ai": {
+    sourceManifest: resolve(piRoot, "packages/ai/package.json"),
+    ownerManifest: resolve(dshRoot, "packages/llm/llm-pi-ai/package.json"),
+  },
+};
+for (const [packageName, manifests] of Object.entries(piRuntimePackages)) {
+  assertPackageVersion(manifests.sourceManifest, PI_VERSION, packageName);
+  assertDependencyVersion(manifests.ownerManifest, packageName, PI_VERSION);
+}
 await run("pnpm", ["install", "--frozen-lockfile"], {
   cwd: dshRoot,
   env: { ...process.env, CI: "true" },
@@ -67,6 +90,18 @@ await run(
   { cwd: dshRoot, env: { ...process.env, CI: "true" } },
 );
 materializeDshClosure(dshDeployment);
+const deployedPiPackages = Object.fromEntries(
+  Object.keys(piRuntimePackages).map((packageName) => {
+    const manifestPath = resolve(
+      dshDeployment,
+      "node_modules",
+      ...packageName.split("/"),
+      "package.json",
+    );
+    assertPackageVersion(manifestPath, PI_VERSION, packageName);
+    return [packageName, PI_VERSION];
+  }),
+);
 
 const launcher = resolve(stageDirectory, "dsh-launcher.mjs");
 copyFileSync(
@@ -115,6 +150,10 @@ copyFileSync(
   resolve(licenseDirectory, "DeepSeek-Harness-THIRD_PARTY_NOTICES.md"),
 );
 copyFileSync(
+  resolve(piRoot, "LICENSE"),
+  resolve(licenseDirectory, "Pi-LICENSE"),
+);
+copyFileSync(
   resolve(repositoryRoot, "THIRD_PARTY_NOTICES.md"),
   resolve(licenseDirectory, "SeekDock-THIRD_PARTY_NOTICES.md"),
 );
@@ -129,6 +168,11 @@ writeFileSync(
         embeddedNodeVersion,
       },
       deepSeekHarness: { commit: DSH_COMMIT, version: stagedDshVersion },
+      pi: {
+        commit: PI_COMMIT,
+        version: PI_VERSION,
+        runtimePackages: deployedPiPackages,
+      },
     },
     null,
     2,
@@ -136,3 +180,33 @@ writeFileSync(
 );
 
 console.log(`Prepared SeekDock runtime at ${stageDirectory}`);
+
+function readManifest(manifestPath, label) {
+  if (!existsSync(manifestPath)) {
+    throw new Error(`${label} manifest is missing: ${manifestPath}`);
+  }
+  return JSON.parse(readFileSync(manifestPath, "utf8"));
+}
+
+function assertPackageVersion(manifestPath, expectedVersion, packageName) {
+  const manifest = readManifest(manifestPath, packageName);
+  if (manifest.version !== expectedVersion) {
+    throw new Error(
+      `${packageName} must be ${expectedVersion}; found ${String(manifest.version)}`,
+    );
+  }
+}
+
+function assertDependencyVersion(
+  ownerManifestPath,
+  packageName,
+  expectedVersion,
+) {
+  const manifest = readManifest(ownerManifestPath, "DSH Pi owner");
+  const actualVersion = manifest.dependencies?.[packageName];
+  if (actualVersion !== expectedVersion) {
+    throw new Error(
+      `${String(manifest.name)} must depend on ${packageName} ${expectedVersion}; found ${String(actualVersion)}`,
+    );
+  }
+}

@@ -1,7 +1,13 @@
 import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
-import { assertBunVersion, DSH_COMMIT, repositoryRoot } from "./constants.mjs";
+import {
+  assertBunVersion,
+  DSH_COMMIT,
+  PI_COMMIT,
+  PI_VERSION,
+  repositoryRoot,
+} from "./constants.mjs";
 import { run } from "./process.mjs";
 
 assertBunVersion();
@@ -29,6 +35,15 @@ function runtimeIsCurrent() {
   const requiredFiles = [
     manifestPath,
     resolve(stageDirectory, "dsh/lib/bin.js"),
+    resolve(
+      stageDirectory,
+      "dsh/node_modules/@earendil-works/pi-agent-core/package.json",
+    ),
+    resolve(
+      stageDirectory,
+      "dsh/node_modules/@earendil-works/pi-ai/package.json",
+    ),
+    resolve(stageDirectory, "licenses/Pi-LICENSE"),
     sourceLauncher,
     stagedLauncher,
   ];
@@ -42,6 +57,8 @@ function runtimeIsCurrent() {
     return (
       manifest.target === target &&
       manifest.deepSeekHarness?.commit === DSH_COMMIT &&
+      manifest.pi?.commit === PI_COMMIT &&
+      manifest.pi?.version === PI_VERSION &&
       manifest.electron?.version === electronVersion
     );
   } catch {

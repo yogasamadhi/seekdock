@@ -4,3 +4,6 @@
 [submodule "vendor/opencode"]
 	path = vendor/opencode
 	url = https://github.com/anomalyco/opencode.git
+[submodule "vendor/pi"]
+	path = vendor/pi
+	url = https://github.com/earendil-works/pi.git

@@ -1,4 +1,10 @@
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
@@ -40,6 +46,19 @@ describe("real pinned DeepSeek Harness runtime", () => {
     const userData = resolve(testRoot, "user-data");
     const workspace = resolve(testRoot, "workspace");
     mkdirSync(workspace, { recursive: true });
+
+    const runtimeManifest = JSON.parse(
+      readFileSync(resolve(runtimeRoot, "runtime-manifest.json"), "utf8"),
+    );
+    expect(runtimeManifest.pi).toEqual({
+      commit: "914cf1472e715297caa30db4b9535d534a9eb718",
+      version: "0.84.2",
+      runtimePackages: {
+        "@earendil-works/pi-agent-core": "0.84.2",
+        "@earendil-works/pi-ai": "0.84.2",
+      },
+    });
+    expect(existsSync(resolve(runtimeRoot, "licenses/Pi-LICENSE"))).toBe(true);
 
     const supervisor = new DshRuntimeSupervisor({
       paths: {

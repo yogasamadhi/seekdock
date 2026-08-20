@@ -5,6 +5,8 @@ import {
   dshRoot,
   OPENCODE_COMMIT,
   openCodeRoot,
+  PI_COMMIT,
+  piRoot,
   repositoryRoot,
 } from "./constants.mjs";
 import { run } from "./process.mjs";
@@ -18,6 +20,7 @@ await run("git", ["submodule", "update", "--init", "--recursive"], {
 await Promise.all([
   assertSubmodule(dshRoot, DSH_COMMIT, "DeepSeek Harness"),
   assertSubmodule(openCodeRoot, OPENCODE_COMMIT, "OpenCode"),
+  assertSubmodule(piRoot, PI_COMMIT, "Pi"),
 ]);
 
 await run("bun", ["install", "--frozen-lockfile"], { cwd: repositoryRoot });
