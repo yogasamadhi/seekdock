@@ -12,6 +12,7 @@ const config: Configuration = {
   artifactName: "seekdock-${os}-${arch}.${ext}",
   asar: true,
   directories: {
+    buildResources: "build",
     output: "release",
   },
   files: ["out/**/*", "package.json"],
@@ -29,6 +30,7 @@ const config: Configuration = {
     category: "public.app-category.developer-tools",
     hardenedRuntime: true,
     identity: null,
+    icon: "icon.icns",
     notarize: false,
     target: ["dmg", "zip"],
   },
@@ -36,6 +38,7 @@ const config: Configuration = {
     sign: false,
   },
   win: {
+    icon: "icon.ico",
     target: ["nsis"],
   },
   nsis: {
