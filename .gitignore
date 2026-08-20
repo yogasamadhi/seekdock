@@ -1,0 +1,13 @@
+.DS_Store
+node_modules/
+.bun/
+.runtime/
+dist/
+apps/*/out/
+apps/*/dist/
+apps/*/release/
+playwright-report/
+test-results/
+coverage/
+*.log
+bun-error.log

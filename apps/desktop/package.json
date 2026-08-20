@@ -1,0 +1,21 @@
+{
+  "name": "@seekdock/desktop",
+  "version": "0.1.0",
+  "description": "Desktop host for DeepSeek Harness",
+  "author": "SeekDock contributors",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "predev": "bun ../../scripts/ensure-dsh-runtime.mjs",
+    "dev": "bunx --bun electron-vite dev",
+    "build": "bunx --bun electron-vite build",
+    "typecheck": "bunx tsc --noEmit -p tsconfig.json",
+    "test:e2e": "bun ../../scripts/ensure-dsh-runtime.mjs && bun run build && bunx vitest run --config e2e/vitest.config.ts && bunx playwright test --config e2e/playwright.config.ts",
+    "package:dir": "bunx electron-builder --dir --config electron-builder.config.ts",
+    "package:mac:arm64": "bunx electron-builder --mac --arm64 --config electron-builder.config.ts",
+    "package:mac:x64": "bunx electron-builder --mac --x64 --config electron-builder.config.ts",
+    "package:win:x64": "bunx electron-builder --win --x64 --config electron-builder.config.ts"
+  }
+}

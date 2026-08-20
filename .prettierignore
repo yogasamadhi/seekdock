@@ -1,0 +1,7 @@
+vendor/
+.runtime/
+apps/*/out/
+apps/*/dist/
+apps/*/release/
+playwright-report/
+test-results/
