@@ -5,3 +5,10 @@
       deepseek:
         apiKeyEnv: DEEPSEEK_API_KEY
         displayName: Pi
+
+- insert:
+    - id: agent-backend-pi
+      name: "@seekdock/dsh-agent-backend-pi"
+
+    - id: ui-agent-backend
+      name: "@seekdock/dsh-client-ui-agent-backend"

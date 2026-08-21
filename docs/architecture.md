@@ -8,6 +8,12 @@ the React UI. SeekDock owns the Electron process, window policy, runtime
 lifecycle, logs, and native packaging. It does not project or persist Agent
 state.
 
+SeekDock carries one version-locked compatibility overlay for the Pi reaction
+loop. The overlay adds DSH's backend extension surface and two Cordis modules,
+but DSH still performs tool execution, approval, sandboxing, retries, logging,
+and persistence. Pi replaces only step orchestration. There is no second Agent
+state model, IPC carrier, or protocol.
+
 OpenCode is used only as an engineering reference for Electron lifecycle,
 sidecar supervision, navigation hardening, and packaging. It is not linked or
 executed by SeekDock.
@@ -51,7 +57,14 @@ out of scope until an authenticated upstream transport exists.
 ## Distribution
 
 SeekDock uses a Bun workspace while DeepSeek retains its upstream pnpm
-workspace. Development and release staging build the pinned DeepSeek submodule
-and materialize the production `@deepseek-ai/dsh` closure. Both modes run that
-same symlink-free payload with Electron's embedded Node; no second Node runtime
-is downloaded or packaged. OpenCode is never included in the application.
+workspace. Staging verifies the official DSH commit, exports it with
+`git archive`, applies the compatibility overlay only inside
+`.runtime/build/<target>`, and runs pnpm in that disposable copy. It then
+materializes a symlink-free production `@deepseek-ai/dsh` closure, records the
+overlay digest and package versions, and removes the temporary source.
+
+The two `@seekdock` modules and Pi 0.84.2 npm dependencies are bundled in that
+closure and loaded by DSH's Cordis Loader through `seekdock.patch.yml`; startup
+does not download code. The existing staged runtime is replaced only after a
+new one passes validation. Both development and packaged modes run the same
+payload with Electron's embedded Node. OpenCode is never included.

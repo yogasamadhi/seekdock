@@ -4,8 +4,11 @@ import { spawn, spawnSync } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import {
+  isBunVersionSupported,
+  MINIMUM_BUN_VERSION,
+} from "./scripts/constants.mjs";
 
-const BUN_VERSION = "1.3.14";
 const PNPM_VERSION = "11.7.0";
 const DSH_COMMIT = "141eb6fef83422698aef7a981029e843e8161534";
 const OPENCODE_COMMIT = "b155b15694dbcc6768f11d2f25cc2bdd1f738ab4";
@@ -93,10 +96,12 @@ async function main(): Promise<void> {
 
 function assertBunVersion(): void {
   const version = process.versions.bun;
-  if (version !== BUN_VERSION) {
-    throw new Error(`需要 Bun ${BUN_VERSION}，当前版本为 ${version ?? "未知"}`);
+  if (!isBunVersionSupported(version)) {
+    throw new Error(
+      `需要 Bun ${MINIMUM_BUN_VERSION} 或更高版本，当前版本为 ${version ?? "未知"}`,
+    );
   }
-  console.log(`✓ Bun ${BUN_VERSION}`);
+  console.log(`✓ Bun ${version}（最低要求 ${MINIMUM_BUN_VERSION}）`);
 }
 
 function assertPnpmVersion(): void {

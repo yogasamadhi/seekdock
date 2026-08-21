@@ -5,6 +5,7 @@ import {
   mkdirSync,
   readFileSync,
   realpathSync,
+  renameSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -25,6 +26,12 @@ import { capture, run } from "./process.mjs";
 import { assertSubmodule } from "./vendor.mjs";
 import { materializeDshClosure } from "./materialize-dsh-closure.mjs";
 import { patchDshRuntime } from "./patch-dsh-runtime.mjs";
+import {
+  calculateDshOverlayDigest,
+  materializePatchedDshSource,
+  readDshOverlayManifest,
+  removePatchedDshSource,
+} from "./dsh-overlay.mjs";
 
 assertBunVersion();
 
@@ -46,127 +53,202 @@ await Promise.all([
   assertSubmodule(dshRoot, DSH_COMMIT, "DeepSeek Harness"),
   assertSubmodule(piRoot, PI_COMMIT, "Pi"),
 ]);
-await run(PNPM_COMMAND, ["install", "--frozen-lockfile"], {
-  cwd: dshRoot,
-  env: { ...process.env, CI: "true" },
-});
-await run(PNPM_COMMAND, ["run", "build"], {
-  cwd: dshRoot,
-  env: { ...process.env, CI: "true" },
-});
-
+const overlayManifest = readDshOverlayManifest();
+const overlayDigest = calculateDshOverlayDigest();
+const buildDshRoot = await materializePatchedDshSource(target);
 const runtimeRoot = resolve(repositoryRoot, ".runtime");
 const stageDirectory = resolve(runtimeRoot, "stage", target);
-rmSync(stageDirectory, { recursive: true, force: true });
-mkdirSync(stageDirectory, { recursive: true });
+const nextStageDirectory = resolve(runtimeRoot, "stage-next", target);
+try {
+  await run(PNPM_COMMAND, ["install", "--frozen-lockfile"], {
+    cwd: buildDshRoot,
+    env: { ...process.env, CI: "true" },
+  });
+  await run(PNPM_COMMAND, ["run", "build"], {
+    cwd: buildDshRoot,
+    env: { ...process.env, CI: "true" },
+  });
 
-const dshDeployment = resolve(stageDirectory, "dsh");
-await run(
-  PNPM_COMMAND,
-  [
-    "--filter",
-    "@deepseek-ai/dsh",
-    "deploy",
-    "--prod",
-    "--legacy",
-    "--config.node-linker=hoisted",
-    "--config.auto-install-peers=false",
-    "--config.link-workspace-packages=true",
-    "--config.ignore-scripts=true",
+  rmSync(nextStageDirectory, { recursive: true, force: true });
+  mkdirSync(nextStageDirectory, { recursive: true });
+
+  const dshDeployment = resolve(nextStageDirectory, "dsh");
+  await run(
+    PNPM_COMMAND,
+    [
+      "--filter",
+      "@deepseek-ai/dsh",
+      "deploy",
+      "--prod",
+      "--legacy",
+      "--config.node-linker=hoisted",
+      "--config.auto-install-peers=false",
+      "--config.link-workspace-packages=true",
+      "--config.ignore-scripts=true",
+      dshDeployment,
+    ],
+    { cwd: buildDshRoot, env: { ...process.env, CI: "true" } },
+  );
+  materializeDshClosure(dshDeployment, buildDshRoot);
+  const koffiPrebuildPackage = materializeLockedKoffi(
     dshDeployment,
-  ],
-  { cwd: dshRoot, env: { ...process.env, CI: "true" } },
-);
-materializeDshClosure(dshDeployment);
-const koffiPrebuildPackage = materializeLockedKoffi(dshDeployment, target);
-const compatibilityPatches = patchDshRuntime(dshDeployment, target);
+    target,
+    buildDshRoot,
+  );
+  const compatibilityPatches = patchDshRuntime(dshDeployment, target);
+  assertRuntimePackageVersions(dshDeployment, overlayManifest);
 
-const launcher = resolve(stageDirectory, "dsh-launcher.mjs");
-copyFileSync(
-  resolve(repositoryRoot, "apps/desktop/resources/dsh-launcher.mjs"),
-  launcher,
-);
-const seekDockPatch = resolve(stageDirectory, "seekdock.patch.yml");
-copyFileSync(
-  resolve(repositoryRoot, "apps/desktop/resources/seekdock.patch.yml"),
-  seekDockPatch,
-);
+  const launcher = resolve(nextStageDirectory, "dsh-launcher.mjs");
+  copyFileSync(
+    resolve(repositoryRoot, "apps/desktop/resources/dsh-launcher.mjs"),
+    launcher,
+  );
+  const seekDockPatch = resolve(nextStageDirectory, "seekdock.patch.yml");
+  copyFileSync(
+    resolve(repositoryRoot, "apps/desktop/resources/seekdock.patch.yml"),
+    seekDockPatch,
+  );
 
-const electronNodeEnvironment = {
-  ...process.env,
-  ELECTRON_RUN_AS_NODE: "1",
-};
-const embeddedNodeVersion = await capture(
-  electronExecutable,
-  ["-p", "process.versions.node"],
-  { env: electronNodeEnvironment },
-);
-const validationHome = resolve(runtimeRoot, "validation-home", target);
-rmSync(validationHome, { recursive: true, force: true });
-const stagedDshVersion = await capture(
-  electronExecutable,
-  ["--expose-internals", resolve(dshDeployment, "lib/bin.js"), "--version"],
-  {
-    env: {
-      ...electronNodeEnvironment,
-      DSH_HOME: validationHome,
+  const electronNodeEnvironment = {
+    ...process.env,
+    ELECTRON_RUN_AS_NODE: "1",
+  };
+  const embeddedNodeVersion = await capture(
+    electronExecutable,
+    ["-p", "process.versions.node"],
+    { env: electronNodeEnvironment },
+  );
+  const validationHome = resolve(runtimeRoot, "validation-home", target);
+  rmSync(validationHome, { recursive: true, force: true });
+  const stagedDshVersion = await capture(
+    electronExecutable,
+    ["--expose-internals", resolve(dshDeployment, "lib/bin.js"), "--version"],
+    {
+      env: {
+        ...electronNodeEnvironment,
+        DSH_HOME: validationHome,
+      },
     },
-  },
-);
-rmSync(validationHome, { recursive: true, force: true });
-if (!stagedDshVersion) {
-  throw new Error("Staged DeepSeek Harness did not report a version");
+  );
+  rmSync(validationHome, { recursive: true, force: true });
+  if (!stagedDshVersion) {
+    throw new Error("Staged DeepSeek Harness did not report a version");
+  }
+
+  const licenseDirectory = resolve(nextStageDirectory, "licenses");
+  mkdirSync(licenseDirectory, { recursive: true });
+  copyFileSync(
+    resolve(repositoryRoot, "LICENSE"),
+    resolve(licenseDirectory, "SeekDock-LICENSE"),
+  );
+  copyFileSync(
+    resolve(dshRoot, "LICENSE"),
+    resolve(licenseDirectory, "DeepSeek-Harness-LICENSE"),
+  );
+  copyFileSync(
+    resolve(dshRoot, "THIRD_PARTY_NOTICES.md"),
+    resolve(licenseDirectory, "DeepSeek-Harness-THIRD_PARTY_NOTICES.md"),
+  );
+  copyFileSync(
+    resolve(piRoot, "LICENSE"),
+    resolve(licenseDirectory, "Pi-LICENSE"),
+  );
+  copyFileSync(
+    resolve(repositoryRoot, "THIRD_PARTY_NOTICES.md"),
+    resolve(licenseDirectory, "SeekDock-THIRD_PARTY_NOTICES.md"),
+  );
+
+  writeFileSync(
+    resolve(nextStageDirectory, "runtime-manifest.json"),
+    `${JSON.stringify(
+      {
+        target,
+        electron: {
+          version: electronManifest.version,
+          embeddedNodeVersion,
+        },
+        deepSeekHarness: {
+          commit: DSH_COMMIT,
+          version: stagedDshVersion,
+          overlay: {
+            id: overlayManifest.id,
+            baseCommit: overlayManifest.baseCommit,
+            digest: overlayDigest,
+            modules: overlayManifest.modules,
+          },
+          koffiVersion: DSH_KOFFI_VERSION,
+          koffiPrebuildPackage,
+          compatibilityPatches,
+        },
+        sourceReferences: {
+          pi: {
+            commit: PI_COMMIT,
+            version: PI_VERSION,
+            runtimePackages: overlayManifest.runtimePackages,
+          },
+        },
+      },
+      null,
+      2,
+    )}\n`,
+  );
+
+  promoteRuntime(nextStageDirectory, stageDirectory, target);
+  console.log(`Prepared SeekDock runtime at ${stageDirectory}`);
+} finally {
+  rmSync(nextStageDirectory, { recursive: true, force: true });
+  removePatchedDshSource(target);
 }
 
-const licenseDirectory = resolve(stageDirectory, "licenses");
-mkdirSync(licenseDirectory, { recursive: true });
-copyFileSync(
-  resolve(repositoryRoot, "LICENSE"),
-  resolve(licenseDirectory, "SeekDock-LICENSE"),
-);
-copyFileSync(
-  resolve(dshRoot, "LICENSE"),
-  resolve(licenseDirectory, "DeepSeek-Harness-LICENSE"),
-);
-copyFileSync(
-  resolve(dshRoot, "THIRD_PARTY_NOTICES.md"),
-  resolve(licenseDirectory, "DeepSeek-Harness-THIRD_PARTY_NOTICES.md"),
-);
-copyFileSync(
-  resolve(repositoryRoot, "THIRD_PARTY_NOTICES.md"),
-  resolve(licenseDirectory, "SeekDock-THIRD_PARTY_NOTICES.md"),
-);
+function assertRuntimePackageVersions(deploymentDirectory, manifest) {
+  for (const [packageName, expectedVersion] of Object.entries({
+    ...manifest.modules,
+    ...manifest.runtimePackages,
+  })) {
+    const packagePath = resolve(
+      deploymentDirectory,
+      "node_modules",
+      ...packageName.split("/"),
+      "package.json",
+    );
+    const actualVersion = JSON.parse(readFileSync(packagePath, "utf8")).version;
+    if (actualVersion !== expectedVersion) {
+      throw new Error(
+        `Expected ${packageName} ${String(expectedVersion)}, found ${String(actualVersion)}`,
+      );
+    }
+  }
+}
 
-writeFileSync(
-  resolve(stageDirectory, "runtime-manifest.json"),
-  `${JSON.stringify(
-    {
-      target,
-      electron: {
-        version: electronManifest.version,
-        embeddedNodeVersion,
-      },
-      deepSeekHarness: {
-        commit: DSH_COMMIT,
-        version: stagedDshVersion,
-        koffiVersion: DSH_KOFFI_VERSION,
-        koffiPrebuildPackage,
-        compatibilityPatches,
-      },
-      sourceReferences: {
-        pi: { commit: PI_COMMIT, version: PI_VERSION },
-      },
-    },
-    null,
-    2,
-  )}\n`,
-);
+function promoteRuntime(nextDirectory, destinationDirectory, runtimeTarget) {
+  const backupDirectory = resolve(
+    repositoryRoot,
+    ".runtime/stage-backup",
+    runtimeTarget,
+  );
+  rmSync(backupDirectory, { recursive: true, force: true });
+  mkdirSync(resolve(backupDirectory, ".."), { recursive: true });
+  const hadCurrent = existsSync(destinationDirectory);
+  if (hadCurrent) renameSync(destinationDirectory, backupDirectory);
+  try {
+    mkdirSync(resolve(destinationDirectory, ".."), { recursive: true });
+    renameSync(nextDirectory, destinationDirectory);
+  } catch (error) {
+    if (hadCurrent && !existsSync(destinationDirectory)) {
+      renameSync(backupDirectory, destinationDirectory);
+    }
+    throw error;
+  }
+  rmSync(backupDirectory, { recursive: true, force: true });
+}
 
-console.log(`Prepared SeekDock runtime at ${stageDirectory}`);
-
-function materializeLockedKoffi(deploymentDirectory, runtimeTarget) {
+function materializeLockedKoffi(
+  deploymentDirectory,
+  runtimeTarget,
+  sourceRoot,
+) {
   const sourceLink = resolve(
-    dshRoot,
+    sourceRoot,
     "packages/host/directory-picker-native/node_modules/koffi",
   );
   if (!existsSync(sourceLink)) {

@@ -6,14 +6,24 @@ import {
 } from "./constants.mjs";
 import { run } from "./process.mjs";
 import { assertSubmodule } from "./vendor.mjs";
+import {
+  materializePatchedDshSource,
+  removePatchedDshSource,
+} from "./dsh-overlay.mjs";
 
 assertBunVersion();
 await assertSubmodule(dshRoot, DSH_COMMIT, "DeepSeek Harness");
-await run(PNPM_COMMAND, ["install", "--frozen-lockfile"], {
-  cwd: dshRoot,
-  env: { ...process.env, CI: "true" },
-});
-await run(PNPM_COMMAND, ["run", "build"], {
-  cwd: dshRoot,
-  env: { ...process.env, CI: "true" },
-});
+const target = `${process.platform}-${process.arch}`;
+const buildDshRoot = await materializePatchedDshSource(target);
+try {
+  await run(PNPM_COMMAND, ["install", "--frozen-lockfile"], {
+    cwd: buildDshRoot,
+    env: { ...process.env, CI: "true" },
+  });
+  await run(PNPM_COMMAND, ["run", "build"], {
+    cwd: buildDshRoot,
+    env: { ...process.env, CI: "true" },
+  });
+} finally {
+  removePatchedDshSource(target);
+}

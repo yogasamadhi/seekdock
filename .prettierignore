@@ -6,3 +6,5 @@ apps/*/release/
 apps/*/release-*/
 playwright-report/
 test-results/
+overlays/deepseek-harness/pi-backend/compatibility.patch
+overlays/deepseek-harness/pi-backend/modules/

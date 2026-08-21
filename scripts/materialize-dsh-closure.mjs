@@ -16,8 +16,11 @@ const ENTRY_PACKAGE = "@deepseek-ai/dsh";
  * Add required workspace peers that pnpm's legacy deploy cannot infer from
  * workspace: ranges, and remove deploy-time links from the packaged payload.
  */
-export function materializeDshClosure(deploymentDirectory) {
-  const packages = indexWorkspacePackages();
+export function materializeDshClosure(
+  deploymentDirectory,
+  sourceRoot = dshRoot,
+) {
+  const packages = indexWorkspacePackages(sourceRoot);
   const closure = resolveWorkspaceClosure(packages);
   const nodeModules = resolve(deploymentDirectory, "node_modules");
 
@@ -53,21 +56,24 @@ export function materializeDshClosure(deploymentDirectory) {
   console.log(`Materialized ${String(closure.size)} DSH workspace packages.`);
 }
 
-function indexWorkspacePackages() {
+function indexWorkspacePackages(sourceRoot) {
   const result = new Map();
   const packageDirectories = [];
 
-  collectChildren(join(dshRoot, "apps"), packageDirectories);
-  collectChildren(join(dshRoot, "vendor"), packageDirectories);
-  for (const group of readdirSync(join(dshRoot, "packages"), {
+  collectChildren(join(sourceRoot, "apps"), packageDirectories);
+  collectChildren(join(sourceRoot, "vendor"), packageDirectories);
+  for (const group of readdirSync(join(sourceRoot, "packages"), {
     withFileTypes: true,
   })) {
     if (!group.isDirectory()) continue;
-    collectChildren(join(dshRoot, "packages", group.name), packageDirectories);
+    collectChildren(
+      join(sourceRoot, "packages", group.name),
+      packageDirectories,
+    );
   }
-  packageDirectories.push(join(dshRoot, "native/landlock-run"));
+  packageDirectories.push(join(sourceRoot, "native/landlock-run"));
   collectChildren(
-    join(dshRoot, "native/landlock-run/packages"),
+    join(sourceRoot, "native/landlock-run/packages"),
     packageDirectories,
   );
 

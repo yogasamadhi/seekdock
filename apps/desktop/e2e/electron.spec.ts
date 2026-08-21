@@ -20,7 +20,7 @@ import {
 const desktopDirectory = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const repositoryRoot = resolve(desktopDirectory, "../..");
 
-test("shows Pi in the model selector and accepts the selection", async () => {
+test("selects and restores the Pi agent backend and Pi model", async () => {
   const testRoot = mkdtempSync(resolve(tmpdir(), "seekdock-pi-selector-"));
   const userData = resolve(testRoot, "user-data");
   let electronApp: ElectronApplication | undefined;
@@ -45,6 +45,17 @@ test("shows Pi in the model selector and accepts the selection", async () => {
     await callRuntimeRpc(page, "workspace.create", { path: workspace });
     await page.reload({ waitUntil: "load" });
 
+    const backendTrigger = page
+      .getByRole("button", { name: "DeepSeek Harness" })
+      .first();
+    await expect(backendTrigger).toBeVisible();
+    await backendTrigger.click();
+    await page.getByRole("menuitem", { name: /^Pi/u }).click();
+    const selectedPiBackend = page.getByRole("button", { name: "Pi" }).first();
+    await expect(selectedPiBackend).toBeVisible();
+    await expect.poll(() => blankSessionBackend(page)).toBe("pi");
+    await expect(selectedPiBackend).toBeEnabled();
+
     const trigger = page
       .getByRole("button", { name: /选择模型(?:，当前)?/u })
       .first();
@@ -65,6 +76,17 @@ test("shows Pi in the model selector and accepts the selection", async () => {
         .getByRole("group", { name: "Pi" })
         .getByRole("menuitemradio", { checked: true }),
     ).toHaveCount(1);
+
+    await electronApp.close();
+    electronApp = undefined;
+    electronApp = await launchSeekDock(userData, {
+      DEEPSEEK_API_KEY: "seekdock-e2e-placeholder",
+    });
+    const restartedPage = await electronApp.firstWindow();
+    await expect
+      .poll(() => restartedPage.url())
+      .toMatch(/^http:\/\/127\.0\.0\.1:\d+\/$/u);
+    await expect.poll(() => blankSessionBackend(restartedPage)).toBe("pi");
   } finally {
     await electronApp?.close();
     rmSync(testRoot, { recursive: true, force: true });
@@ -198,6 +220,15 @@ async function callRuntimeRpc(
   expect(response.ok).toBe(true);
   expect(response.body).toMatchObject({ result: { ok: true } });
   return response.body;
+}
+
+async function blankSessionBackend(page: Page): Promise<string | undefined> {
+  const body = (await callRuntimeRpc(page, "session.list", {})) as {
+    result?: {
+      value?: { items?: Array<{ blank?: boolean; agentBackend?: string }> };
+    };
+  };
+  return body.result?.value?.items?.find((item) => item.blank)?.agentBackend;
 }
 
 function findRuntimePid(mainPid: number): number {

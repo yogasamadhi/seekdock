@@ -1,6 +1,6 @@
 import {
   assertBunVersion,
-  BUN_VERSION,
+  MINIMUM_BUN_VERSION,
   DSH_COMMIT,
   dshRoot,
   OPENCODE_COMMIT,
@@ -26,4 +26,6 @@ await Promise.all([
 await run("bun", ["install", "--frozen-lockfile"], { cwd: repositoryRoot });
 await run("bun", ["scripts/prepare-runtime.mjs"], { cwd: repositoryRoot });
 
-console.log(`SeekDock bootstrap complete with Bun ${BUN_VERSION}.`);
+console.log(
+  `SeekDock bootstrap complete with Bun ${process.versions.bun} (minimum ${MINIMUM_BUN_VERSION}).`,
+);

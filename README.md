@@ -29,7 +29,7 @@ boundaries.
 ## Requirements
 
 - Git with submodule support
-- Bun 1.3.14
+- Bun 1.3.14 or later
 - pnpm 11.7.0 (only for the upstream DeepSeek Harness workspace)
 
 ## Development
@@ -40,9 +40,10 @@ bun run bootstrap
 bun start
 ```
 
-`bootstrap` initializes all three submodules, installs the independent SeekDock and
-DeepSeek workspaces, and builds DeepSeek Harness. The first run creates an
-isolated DSH home under Electron's SeekDock user-data directory.
+`bootstrap` initializes all three submodules, installs SeekDock, exports the
+pinned DeepSeek Harness source to a disposable build directory, and prepares
+the desktop runtime. The first run creates an isolated DSH home under
+Electron's SeekDock user-data directory.
 
 `bun start` runs [`run.ts`](run.ts): it verifies the pinned toolchain and
 submodules, installs frozen dependencies, builds missing DSH development
@@ -54,12 +55,14 @@ install, scripts, development server, tests, and desktop build. DSH itself runs
 under Electron's embedded Node via `ELECTRON_RUN_AS_NODE=1`; SeekDock neither
 requires nor packages a separate Node distribution.
 
-DeepSeek Harness remains a read-only upstream pnpm workspace. SeekDock builds
-it with its pinned pnpm version, then materializes a production closure without
-workspace symlinks so the same DSH payload works in development and packages.
-Pi remains a read-only source reference at `v0.84.2`; SeekDock does not build or
-modify that submodule. The desktop runtime activates the Pi adapter already
-shipped by DeepSeek Harness through a SeekDock-owned startup overlay.
+DeepSeek Harness remains a read-only upstream pnpm workspace. SeekDock exports
+the pinned official commit with `git archive`, applies its version-locked Pi
+compatibility overlay only to that temporary copy, then materializes a
+production closure without workspace symlinks. Pi remains a read-only source
+reference at `v0.84.2`; SeekDock does not build or modify that submodule. The
+packaged runtime contains two SeekDock-owned Cordis modules, so users can choose
+DeepSeek Harness or Pi without a fork, a separate repository, or a startup
+download.
 
 Useful commands:
 
@@ -69,6 +72,8 @@ bun run test:e2e
 bun run build
 bun run runtime:prepare
 bun run package:dir
+bun run package:mac:arm64
+bun run package:win:x64
 ```
 
 `runtime:prepare` and `package:dir` are native builds. The initial matrix is

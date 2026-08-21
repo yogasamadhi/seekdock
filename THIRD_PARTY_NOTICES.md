@@ -19,8 +19,9 @@ runtime during staging.
 - License: MIT, retained in `vendor/pi/LICENSE`
 
 The Pi submodule is a read-only source reference and is not copied wholesale
-into packaged builds. The Pi adapter included in the DeepSeek Harness runtime
-is covered by the Harness production dependency notices.
+into packaged builds. SeekDock's Pi backend deploys the MIT-licensed
+`@earendil-works/pi-agent-core` and `@earendil-works/pi-ai` packages at version
+0.84.2. The Pi license is copied into the packaged runtime.
 
 ## OpenCode
 

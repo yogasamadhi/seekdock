@@ -53,6 +53,14 @@ describe("real pinned DeepSeek Harness runtime", () => {
     expect(runtimeManifest.sourceReferences.pi).toEqual({
       commit: "914cf1472e715297caa30db4b9535d534a9eb718",
       version: "0.84.2",
+      runtimePackages: {
+        "@earendil-works/pi-agent-core": "0.84.2",
+        "@earendil-works/pi-ai": "0.84.2",
+      },
+    });
+    expect(runtimeManifest.deepSeekHarness.overlay.modules).toEqual({
+      "@seekdock/dsh-agent-backend-pi": "0.1.0-rc.8",
+      "@seekdock/dsh-client-ui-agent-backend": "0.1.0-rc.8",
     });
 
     const supervisor = new DshRuntimeSupervisor({
@@ -117,6 +125,56 @@ describe("real pinned DeepSeek Harness runtime", () => {
           },
         },
       });
+      const backends = await callRuntimeApi(ready.origin, "agentBackend.list");
+      expect(backends).toMatchObject({
+        result: {
+          ok: true,
+          value: {
+            backends: [
+              expect.objectContaining({ id: "dsh", isDefault: true }),
+              expect.objectContaining({ id: "pi", isDefault: false }),
+            ],
+          },
+        },
+      });
+
+      const created = await callRuntimeApi(ready.origin, "session.create", {
+        cwd: workspace,
+        agentBackend: "pi",
+      });
+      expect(created).toMatchObject({
+        result: {
+          ok: true,
+          value: { sessionId: expect.any(String), agentBackend: "pi" },
+        },
+      });
+      const sessionId = (
+        created as {
+          result: { value: { sessionId: string } };
+        }
+      ).result.value.sessionId;
+      expect(
+        await callRuntimeApi(ready.origin, "agentBackend.select", {
+          sessionId,
+          agentBackend: "dsh",
+        }),
+      ).toMatchObject({ result: { ok: true, value: { agentBackend: "dsh" } } });
+      expect(
+        await callRuntimeApi(ready.origin, "agentBackend.select", {
+          sessionId,
+          agentBackend: "pi",
+        }),
+      ).toMatchObject({ result: { ok: true, value: { agentBackend: "pi" } } });
+      expect(await callRuntimeApi(ready.origin, "session.list")).toMatchObject({
+        result: {
+          ok: true,
+          value: {
+            items: expect.arrayContaining([
+              expect.objectContaining({ sessionId, agentBackend: "pi" }),
+            ]),
+          },
+        },
+      });
       if (process.platform === "win32") {
         expect(html).toContain(
           "@deepseek-ai/dsh-client-ui-directory-picker-native",
@@ -157,6 +215,7 @@ describe("real pinned DeepSeek Harness runtime", () => {
 async function callRuntimeApi(
   origin: string,
   method: string,
+  payload: unknown = {},
 ): Promise<unknown> {
   const rpcId = `seekdock-e2e-${method}`;
   const response = await fetch(new URL(`/api/${method}`, origin), {
@@ -166,7 +225,7 @@ async function callRuntimeApi(
       type: "client-request",
       rpcId,
       method,
-      payload: {},
+      payload,
     }),
   });
   expect(response.ok).toBe(true);
