@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { resolveRuntimePaths } from "./runtime-paths";
 
@@ -11,11 +12,11 @@ describe("runtime path selection", () => {
       repositoryRoot: "/repo",
       resourcesPath: "/resources",
     });
-    expect(paths.dshBin).toBe(
-      "/repo/.runtime/stage/darwin-arm64/dsh/lib/bin.js",
-    );
-    expect(paths.launcher).toBe(
-      "/repo/.runtime/stage/darwin-arm64/dsh-launcher.mjs",
+    const runtimeRoot = resolve("/repo", ".runtime/stage", "darwin-arm64");
+    expect(paths.dshBin).toBe(resolve(runtimeRoot, "dsh/lib/bin.js"));
+    expect(paths.launcher).toBe(resolve(runtimeRoot, "dsh-launcher.mjs"));
+    expect(paths.seekDockPatch).toBe(
+      resolve(runtimeRoot, "seekdock.patch.yml"),
     );
     expect(paths.electronExecutable).toBe(
       "/repo/node_modules/electron/Electron",
@@ -31,7 +32,12 @@ describe("runtime path selection", () => {
       repositoryRoot: "C:\\repo",
       resourcesPath: "/app/resources",
     });
-    expect(paths.dshBin).toBe("/app/resources/runtime/dsh/lib/bin.js");
+    expect(paths.dshBin).toBe(
+      resolve("/app/resources", "runtime/dsh/lib/bin.js"),
+    );
     expect(paths.electronExecutable).toBe("C:\\SeekDock\\SeekDock.exe");
+    expect(paths.seekDockPatch).toBe(
+      resolve("/app/resources", "runtime/seekdock.patch.yml"),
+    );
   });
 });

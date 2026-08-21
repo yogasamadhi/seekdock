@@ -1,5 +1,11 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,21 +20,63 @@ import {
 const desktopDirectory = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const repositoryRoot = resolve(desktopDirectory, "../..");
 
+test("shows Pi in the model selector and accepts the selection", async () => {
+  const testRoot = mkdtempSync(resolve(tmpdir(), "seekdock-pi-selector-"));
+  const userData = resolve(testRoot, "user-data");
+  let electronApp: ElectronApplication | undefined;
+
+  try {
+    mkdirSync(resolve(userData, "dsh"), { recursive: true });
+    writeFileSync(
+      resolve(userData, "dsh/settings.yaml"),
+      ["ui-onboarding:", "  welcomeNoticeVersion: 2026-08-13.1", ""].join("\n"),
+    );
+    electronApp = await launchSeekDock(userData, {
+      DEEPSEEK_API_KEY: "seekdock-e2e-placeholder",
+    });
+
+    const page = await electronApp.firstWindow();
+    await expect
+      .poll(() => page.url())
+      .toMatch(/^http:\/\/127\.0\.0\.1:\d+\/$/u);
+
+    const workspace = resolve(testRoot, "workspace");
+    mkdirSync(workspace, { recursive: true });
+    await callRuntimeRpc(page, "workspace.create", { path: workspace });
+    await page.reload({ waitUntil: "load" });
+
+    const trigger = page
+      .getByRole("button", { name: /选择模型(?:，当前)?/u })
+      .first();
+    await expect(trigger).toBeVisible();
+    await trigger.click();
+    await page.getByRole("menuitem", { name: /模型/u }).click();
+
+    const piGroup = page.getByRole("group", { name: "Pi" });
+    await expect(piGroup).toBeVisible();
+    const piModel = piGroup.getByRole("menuitemradio").first();
+    await expect(piModel).toBeVisible();
+    await piModel.click();
+
+    await trigger.click();
+    await page.getByRole("menuitem", { name: /模型/u }).click();
+    await expect(
+      page
+        .getByRole("group", { name: "Pi" })
+        .getByRole("menuitemradio", { checked: true }),
+    ).toHaveCount(1);
+  } finally {
+    await electronApp?.close();
+    rmSync(testRoot, { recursive: true, force: true });
+  }
+});
+
 test("loads DSH, enforces external navigation, and recovers after a runtime crash", async () => {
   const testRoot = mkdtempSync(resolve(tmpdir(), "seekdock-electron-"));
   let electronApp: ElectronApplication | undefined;
 
   try {
-    electronApp = await electron.launch({
-      args: [resolve(desktopDirectory, "out/main/index.js")],
-      cwd: desktopDirectory,
-      env: {
-        ...process.env,
-        SEEKDOCK_E2E: "1",
-        SEEKDOCK_REPOSITORY_ROOT: repositoryRoot,
-        SEEKDOCK_USER_DATA_DIR: resolve(testRoot, "user-data"),
-      },
-    });
+    electronApp = await launchSeekDock(resolve(testRoot, "user-data"));
 
     const page = await electronApp.firstWindow();
     await expect
@@ -100,6 +148,56 @@ async function assertDshWebUi(page: Page): Promise<void> {
   await expect(page.getByRole("button", { name: "标准模式" })).toBeVisible();
   await expect(page.getByRole("button", { name: "继续" })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "选择工作区" })).toBeVisible();
+}
+
+function launchSeekDock(
+  userData: string,
+  environment: NodeJS.ProcessEnv = {},
+): Promise<ElectronApplication> {
+  const executablePath = process.env.SEEKDOCK_E2E_EXECUTABLE;
+  return electron.launch({
+    ...(executablePath
+      ? { executablePath }
+      : { args: [resolve(desktopDirectory, "out/main/index.js")] }),
+    cwd: executablePath ? resolve(executablePath, "..") : desktopDirectory,
+    env: {
+      ...process.env,
+      ...environment,
+      SEEKDOCK_E2E: "1",
+      SEEKDOCK_REPOSITORY_ROOT: repositoryRoot,
+      SEEKDOCK_USER_DATA_DIR: userData,
+    },
+  });
+}
+
+async function callRuntimeRpc(
+  page: Page,
+  method: string,
+  payload: unknown,
+): Promise<unknown> {
+  const response = await page.evaluate(
+    async ({ rpcMethod, rpcPayload }) => {
+      const rpcId = `seekdock-electron-${rpcMethod}-${String(Date.now())}`;
+      const request = await fetch(`/api/${rpcMethod}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          type: "client-request",
+          rpcId,
+          method: rpcMethod,
+          payload: rpcPayload,
+        }),
+      });
+      return {
+        ok: request.ok,
+        body: (await request.json()) as unknown,
+      };
+    },
+    { rpcMethod: method, rpcPayload: payload },
+  );
+  expect(response.ok).toBe(true);
+  expect(response.body).toMatchObject({ result: { ok: true } });
+  return response.body;
 }
 
 function findRuntimePid(mainPid: number): number {

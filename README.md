@@ -40,8 +40,8 @@ bun run bootstrap
 bun start
 ```
 
-`bootstrap` initializes all three submodules, installs the independent SeekDock
-and DeepSeek workspaces, and builds DeepSeek Harness. The first run creates an
+`bootstrap` initializes all three submodules, installs the independent SeekDock and
+DeepSeek workspaces, and builds DeepSeek Harness. The first run creates an
 isolated DSH home under Electron's SeekDock user-data directory.
 
 `bun start` runs [`run.ts`](run.ts): it verifies the pinned toolchain and
@@ -57,9 +57,9 @@ requires nor packages a separate Node distribution.
 DeepSeek Harness remains a read-only upstream pnpm workspace. SeekDock builds
 it with its pinned pnpm version, then materializes a production closure without
 workspace symlinks so the same DSH payload works in development and packages.
-Pi remains a read-only source/audit submodule; the packaged Pi agent runtime is
-the exact `@earendil-works/pi-agent-core` and `@earendil-works/pi-ai` dependency
-closure selected and owned by DeepSeek Harness.
+Pi remains a read-only source reference at `v0.84.2`; SeekDock does not build or
+modify that submodule. The desktop runtime activates the Pi adapter already
+shipped by DeepSeek Harness through a SeekDock-owned startup overlay.
 
 Useful commands:
 

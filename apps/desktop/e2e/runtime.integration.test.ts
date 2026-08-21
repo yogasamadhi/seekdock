@@ -50,21 +50,17 @@ describe("real pinned DeepSeek Harness runtime", () => {
     const runtimeManifest = JSON.parse(
       readFileSync(resolve(runtimeRoot, "runtime-manifest.json"), "utf8"),
     );
-    expect(runtimeManifest.pi).toEqual({
+    expect(runtimeManifest.sourceReferences.pi).toEqual({
       commit: "914cf1472e715297caa30db4b9535d534a9eb718",
       version: "0.84.2",
-      runtimePackages: {
-        "@earendil-works/pi-agent-core": "0.84.2",
-        "@earendil-works/pi-ai": "0.84.2",
-      },
     });
-    expect(existsSync(resolve(runtimeRoot, "licenses/Pi-LICENSE"))).toBe(true);
 
     const supervisor = new DshRuntimeSupervisor({
       paths: {
         dshBin: resolve(runtimeRoot, "dsh/lib/bin.js"),
         electronExecutable,
         launcher: resolve(runtimeRoot, "dsh-launcher.mjs"),
+        seekDockPatch: resolve(runtimeRoot, "seekdock.patch.yml"),
       },
       cwd: workspace,
       environment: buildRuntimeEnvironment(process.env, userData),
@@ -82,17 +78,100 @@ describe("real pinned DeepSeek Harness runtime", () => {
       expect(response.ok).toBe(true);
       expect(html).toMatch(/id=["']root["']/u);
       expect(html).toContain("__DSH_BOOT__");
+      expect(
+        readFileSync(resolve(runtimeRoot, "seekdock.patch.yml"), "utf8"),
+      ).toContain("displayName: Pi");
+
+      const providers = await callRuntimeApi(ready.origin, "llm.providers");
+      expect(providers).toMatchObject({
+        result: {
+          ok: true,
+          value: {
+            providers: expect.arrayContaining([
+              {
+                provider: "deepseek",
+                displayName: "Pi",
+                settingsNs: "llm-pi-ai",
+                settingsPath: ["providers", "deepseek"],
+                active: true,
+                declared: false,
+              },
+            ]),
+          },
+        },
+      });
+      const models = await callRuntimeApi(ready.origin, "llm.models");
+      expect(models).toMatchObject({
+        result: {
+          ok: true,
+          value: {
+            groups: expect.arrayContaining([
+              {
+                id: "deepseek",
+                name: "Pi",
+                models: expect.arrayContaining([
+                  expect.objectContaining({ id: expect.any(String) }),
+                ]),
+              },
+            ]),
+          },
+        },
+      });
+      if (process.platform === "win32") {
+        expect(html).toContain(
+          "@deepseek-ai/dsh-client-ui-directory-picker-native",
+        );
+        expect(html).not.toContain(
+          "@deepseek-ai/dsh-client-ui-directory-picker-browse",
+        );
+        expect(
+          readFileSync(
+            resolve(
+              runtimeRoot,
+              "dsh/node_modules/@deepseek-ai/dsh-host-directory-picker-native/lib/worker.cjs",
+            ),
+            "utf8",
+          ),
+        ).toContain('koffi.decode(address, offset, "uint16")');
+      }
 
       await supervisor.stop();
       await expect
         .poll(() => canConnect(Number(url.port)), { timeout: 5_000 })
         .toBe(false);
       expect(existsSync(resolve(userData, "dsh"))).toBe(true);
+      expect(
+        JSON.parse(
+          readFileSync(
+            resolve(runtimeRoot, "dsh/node_modules/koffi/package.json"),
+            "utf8",
+          ),
+        ).version,
+      ).toBe("3.1.1");
     } finally {
       await supervisor.stop();
     }
   }, 90_000);
 });
+
+async function callRuntimeApi(
+  origin: string,
+  method: string,
+): Promise<unknown> {
+  const rpcId = `seekdock-e2e-${method}`;
+  const response = await fetch(new URL(`/api/${method}`, origin), {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      type: "client-request",
+      rpcId,
+      method,
+      payload: {},
+    }),
+  });
+  expect(response.ok).toBe(true);
+  return response.json();
+}
 
 function canConnect(port: number): Promise<boolean> {
   return new Promise((resolveResult) => {

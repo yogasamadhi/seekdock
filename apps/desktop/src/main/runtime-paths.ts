@@ -5,6 +5,7 @@ export interface RuntimePaths {
   dshBin: string;
   electronExecutable: string;
   launcher: string;
+  seekDockPatch: string;
 }
 
 export interface RuntimePathOptions {
@@ -28,6 +29,7 @@ export function resolveRuntimePaths(options: RuntimePathOptions): RuntimePaths {
     dshBin: resolve(runtimeRoot, "dsh/lib/bin.js"),
     electronExecutable: options.electronExecutable,
     launcher: resolve(runtimeRoot, "dsh-launcher.mjs"),
+    seekDockPatch: resolve(runtimeRoot, "seekdock.patch.yml"),
   };
 }
 

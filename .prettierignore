@@ -3,5 +3,6 @@ vendor/
 apps/*/out/
 apps/*/dist/
 apps/*/release/
+apps/*/release-*/
 playwright-report/
 test-results/

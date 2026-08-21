@@ -1,8 +1,10 @@
 import {
+  cpSync,
   copyFileSync,
   existsSync,
   mkdirSync,
   readFileSync,
+  realpathSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -11,7 +13,9 @@ import { resolve } from "node:path";
 import {
   assertBunVersion,
   DSH_COMMIT,
+  DSH_KOFFI_VERSION,
   dshRoot,
+  PNPM_COMMAND,
   PI_COMMIT,
   PI_VERSION,
   piRoot,
@@ -20,6 +24,7 @@ import {
 import { capture, run } from "./process.mjs";
 import { assertSubmodule } from "./vendor.mjs";
 import { materializeDshClosure } from "./materialize-dsh-closure.mjs";
+import { patchDshRuntime } from "./patch-dsh-runtime.mjs";
 
 assertBunVersion();
 
@@ -41,28 +46,11 @@ await Promise.all([
   assertSubmodule(dshRoot, DSH_COMMIT, "DeepSeek Harness"),
   assertSubmodule(piRoot, PI_COMMIT, "Pi"),
 ]);
-const piRuntimePackages = {
-  "@earendil-works/pi-agent-core": {
-    sourceManifest: resolve(piRoot, "packages/agent/package.json"),
-    ownerManifest: resolve(
-      dshRoot,
-      "packages/core/agent-backend-pi/package.json",
-    ),
-  },
-  "@earendil-works/pi-ai": {
-    sourceManifest: resolve(piRoot, "packages/ai/package.json"),
-    ownerManifest: resolve(dshRoot, "packages/llm/llm-pi-ai/package.json"),
-  },
-};
-for (const [packageName, manifests] of Object.entries(piRuntimePackages)) {
-  assertPackageVersion(manifests.sourceManifest, PI_VERSION, packageName);
-  assertDependencyVersion(manifests.ownerManifest, packageName, PI_VERSION);
-}
-await run("pnpm", ["install", "--frozen-lockfile"], {
+await run(PNPM_COMMAND, ["install", "--frozen-lockfile"], {
   cwd: dshRoot,
   env: { ...process.env, CI: "true" },
 });
-await run("pnpm", ["run", "build"], {
+await run(PNPM_COMMAND, ["run", "build"], {
   cwd: dshRoot,
   env: { ...process.env, CI: "true" },
 });
@@ -74,7 +62,7 @@ mkdirSync(stageDirectory, { recursive: true });
 
 const dshDeployment = resolve(stageDirectory, "dsh");
 await run(
-  "pnpm",
+  PNPM_COMMAND,
   [
     "--filter",
     "@deepseek-ai/dsh",
@@ -90,23 +78,18 @@ await run(
   { cwd: dshRoot, env: { ...process.env, CI: "true" } },
 );
 materializeDshClosure(dshDeployment);
-const deployedPiPackages = Object.fromEntries(
-  Object.keys(piRuntimePackages).map((packageName) => {
-    const manifestPath = resolve(
-      dshDeployment,
-      "node_modules",
-      ...packageName.split("/"),
-      "package.json",
-    );
-    assertPackageVersion(manifestPath, PI_VERSION, packageName);
-    return [packageName, PI_VERSION];
-  }),
-);
+const koffiPrebuildPackage = materializeLockedKoffi(dshDeployment, target);
+const compatibilityPatches = patchDshRuntime(dshDeployment, target);
 
 const launcher = resolve(stageDirectory, "dsh-launcher.mjs");
 copyFileSync(
   resolve(repositoryRoot, "apps/desktop/resources/dsh-launcher.mjs"),
   launcher,
+);
+const seekDockPatch = resolve(stageDirectory, "seekdock.patch.yml");
+copyFileSync(
+  resolve(repositoryRoot, "apps/desktop/resources/seekdock.patch.yml"),
+  seekDockPatch,
 );
 
 const electronNodeEnvironment = {
@@ -150,10 +133,6 @@ copyFileSync(
   resolve(licenseDirectory, "DeepSeek-Harness-THIRD_PARTY_NOTICES.md"),
 );
 copyFileSync(
-  resolve(piRoot, "LICENSE"),
-  resolve(licenseDirectory, "Pi-LICENSE"),
-);
-copyFileSync(
   resolve(repositoryRoot, "THIRD_PARTY_NOTICES.md"),
   resolve(licenseDirectory, "SeekDock-THIRD_PARTY_NOTICES.md"),
 );
@@ -167,11 +146,15 @@ writeFileSync(
         version: electronManifest.version,
         embeddedNodeVersion,
       },
-      deepSeekHarness: { commit: DSH_COMMIT, version: stagedDshVersion },
-      pi: {
-        commit: PI_COMMIT,
-        version: PI_VERSION,
-        runtimePackages: deployedPiPackages,
+      deepSeekHarness: {
+        commit: DSH_COMMIT,
+        version: stagedDshVersion,
+        koffiVersion: DSH_KOFFI_VERSION,
+        koffiPrebuildPackage,
+        compatibilityPatches,
+      },
+      sourceReferences: {
+        pi: { commit: PI_COMMIT, version: PI_VERSION },
       },
     },
     null,
@@ -181,32 +164,70 @@ writeFileSync(
 
 console.log(`Prepared SeekDock runtime at ${stageDirectory}`);
 
-function readManifest(manifestPath, label) {
-  if (!existsSync(manifestPath)) {
-    throw new Error(`${label} manifest is missing: ${manifestPath}`);
+function materializeLockedKoffi(deploymentDirectory, runtimeTarget) {
+  const sourceLink = resolve(
+    dshRoot,
+    "packages/host/directory-picker-native/node_modules/koffi",
+  );
+  if (!existsSync(sourceLink)) {
+    throw new Error("The pinned DSH Koffi dependency is not installed");
   }
-  return JSON.parse(readFileSync(manifestPath, "utf8"));
-}
 
-function assertPackageVersion(manifestPath, expectedVersion, packageName) {
-  const manifest = readManifest(manifestPath, packageName);
-  if (manifest.version !== expectedVersion) {
+  const source = realpathSync(sourceLink);
+  const sourceManifest = JSON.parse(
+    readFileSync(resolve(source, "package.json"), "utf8"),
+  );
+  if (sourceManifest.version !== DSH_KOFFI_VERSION) {
     throw new Error(
-      `${packageName} must be ${expectedVersion}; found ${String(manifest.version)}`,
+      `Expected DSH Koffi ${DSH_KOFFI_VERSION}, found ${String(sourceManifest.version)}`,
     );
   }
-}
 
-function assertDependencyVersion(
-  ownerManifestPath,
-  packageName,
-  expectedVersion,
-) {
-  const manifest = readManifest(ownerManifestPath, "DSH Pi owner");
-  const actualVersion = manifest.dependencies?.[packageName];
-  if (actualVersion !== expectedVersion) {
+  const prebuildPackage =
+    runtimeTarget === "win32-x64"
+      ? "@koromix/koffi-win32-x64"
+      : runtimeTarget === "darwin-arm64"
+        ? "@koromix/koffi-darwin-arm64"
+        : "@koromix/koffi-darwin-x64";
+  const sourceNodeModules = resolve(source, "..");
+  const prebuildSourceLink = resolve(
+    sourceNodeModules,
+    ...prebuildPackage.split("/"),
+  );
+  if (!existsSync(prebuildSourceLink)) {
     throw new Error(
-      `${String(manifest.name)} must depend on ${packageName} ${expectedVersion}; found ${String(actualVersion)}`,
+      `The pinned DSH Koffi prebuild is not installed: ${prebuildPackage}`,
     );
   }
+
+  copyPackage(source, resolve(deploymentDirectory, "node_modules/koffi"));
+  copyPackage(
+    realpathSync(prebuildSourceLink),
+    resolve(deploymentDirectory, "node_modules", ...prebuildPackage.split("/")),
+  );
+
+  const deployedPrebuildManifest = JSON.parse(
+    readFileSync(
+      resolve(
+        deploymentDirectory,
+        "node_modules",
+        ...prebuildPackage.split("/"),
+        "package.json",
+      ),
+      "utf8",
+    ),
+  );
+  if (deployedPrebuildManifest.version !== DSH_KOFFI_VERSION) {
+    throw new Error(
+      `Expected ${prebuildPackage} ${DSH_KOFFI_VERSION}, found ${String(deployedPrebuildManifest.version)}`,
+    );
+  }
+
+  return prebuildPackage;
+}
+
+function copyPackage(source, destination) {
+  rmSync(destination, { recursive: true, force: true });
+  mkdirSync(resolve(destination, ".."), { recursive: true });
+  cpSync(source, destination, { recursive: true, dereference: true });
 }

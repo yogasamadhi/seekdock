@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 
 const BUN_VERSION = "1.3.14";
 const PNPM_VERSION = "11.7.0";
-const DSH_COMMIT = "465cf1d2fa446209c7e83eae343d0b9dda0a8576";
+const DSH_COMMIT = "141eb6fef83422698aef7a981029e843e8161534";
 const OPENCODE_COMMIT = "b155b15694dbcc6768f11d2f25cc2bdd1f738ab4";
 const PI_COMMIT = "914cf1472e715297caa30db4b9535d534a9eb718";
 

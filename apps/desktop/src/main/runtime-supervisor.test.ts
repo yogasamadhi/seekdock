@@ -60,6 +60,7 @@ function createSupervisor(spawn: () => ChildProcess, startupTimeoutMs = 100) {
       dshBin: process.execPath,
       electronExecutable: process.execPath,
       launcher: process.execPath,
+      seekDockPatch: process.execPath,
     },
     cwd: process.cwd(),
     environment: {},
@@ -73,9 +74,17 @@ function createSupervisor(spawn: () => ChildProcess, startupTimeoutMs = 100) {
 
 describe("DshRuntimeSupervisor", () => {
   it("starts DSH Web without handing the URL to a system browser", () => {
-    expect(buildDshArguments("/runtime/dsh/lib/bin.js")).toEqual([
+    expect(
+      buildDshArguments(
+        "/runtime/dsh/lib/bin.js",
+        "/runtime/seekdock.patch.yml",
+      ),
+    ).toEqual([
       "/runtime/dsh/lib/bin.js",
+      "--profile",
       "web",
+      "--patch",
+      "/runtime/seekdock.patch.yml",
       "--host",
       "127.0.0.1",
       "--port",

@@ -1,0 +1,7 @@
+# SeekDock-owned deployment overlay. DeepSeek Harness remains unmodified.
+- id: llm-pi-ai
+  config:
+    providers:
+      deepseek:
+        apiKeyEnv: DEEPSEEK_API_KEY
+        displayName: Pi

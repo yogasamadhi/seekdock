@@ -306,17 +306,35 @@ export class DshRuntimeSupervisor extends EventEmitter {
 }
 
 function defaultSpawnRuntime(options: RuntimeSpawnOptions): ChildProcess {
-  return fork(options.paths.launcher, buildDshArguments(options.paths.dshBin), {
-    cwd: options.cwd,
-    env: buildElectronNodeEnvironment(options.environment),
-    execArgv: ["--expose-internals"],
-    execPath: options.paths.electronExecutable,
-    silent: true,
-  });
+  return fork(
+    options.paths.launcher,
+    buildDshArguments(options.paths.dshBin, options.paths.seekDockPatch),
+    {
+      cwd: options.cwd,
+      env: buildElectronNodeEnvironment(options.environment),
+      execArgv: ["--expose-internals"],
+      execPath: options.paths.electronExecutable,
+      silent: true,
+    },
+  );
 }
 
-export function buildDshArguments(dshBin: string): string[] {
-  return [dshBin, "web", "--host", "127.0.0.1", "--port", "0", "--no-open"];
+export function buildDshArguments(
+  dshBin: string,
+  seekDockPatch: string,
+): string[] {
+  return [
+    dshBin,
+    "--profile",
+    "web",
+    "--patch",
+    seekDockPatch,
+    "--host",
+    "127.0.0.1",
+    "--port",
+    "0",
+    "--no-open",
+  ];
 }
 
 export function buildElectronNodeEnvironment(
