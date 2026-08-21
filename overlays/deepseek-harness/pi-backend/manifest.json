@@ -1,17 +1,17 @@
 {
   "id": "seekdock-pi-agent-backend-v1",
-  "baseCommit": "141eb6fef83422698aef7a981029e843e8161534",
+  "baseCommit": "528c682e061696f5a160f363f236ecbf53cbd006",
   "sourceCommit": "465cf1d2fa446209c7e83eae343d0b9dda0a8576",
   "modules": {
-    "@seekdock/dsh-agent-backend-pi": "0.1.0-rc.8",
-    "@seekdock/dsh-client-ui-agent-backend": "0.1.0-rc.8"
+    "@seekdock/dsh-agent-backend-pi": "0.1.1-rc.1",
+    "@seekdock/dsh-client-ui-agent-backend": "0.1.1-rc.1"
   },
   "runtimePackages": {
     "@earendil-works/pi-agent-core": "0.84.2",
     "@earendil-works/pi-ai": "0.84.2"
   },
   "contentDigests": {
-    "compatibilityPatch": "01eea2f1414e5146194e0ff3480cbf6f151284fa62d6b48551edab55c09cc7e4",
-    "modules": "635d19bfc357814f556f0459e1ec09cfc58d338c9f1ef45d411602932fbba6ef"
+    "compatibilityPatch": "96ba3f1e2723a162b68eeb26d28cc21042709da0009d0bbd73d4c68cee1a282f",
+    "modules": "3de0439a8985dd608e3cb4c668b21a3971fe9ea92a5076ba10670d781fcb0bf9"
   }
 }

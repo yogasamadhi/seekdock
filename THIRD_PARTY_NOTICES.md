@@ -5,7 +5,7 @@ SeekDock itself is distributed under the MIT License in [`LICENSE`](LICENSE).
 ## DeepSeek Harness
 
 - Source: <https://github.com/deepseek-ai/deepseek-harness>
-- Pinned commit: `141eb6fef83422698aef7a981029e843e8161534`
+- Pinned commit: `528c682e061696f5a160f363f236ecbf53cbd006` (`dsh-v0.1.1-rc.1`)
 - License: MIT, retained in `vendor/deepseek-harness/LICENSE`
 
 DeepSeek Harness and its production dependency closure are included in packaged
