@@ -1,11 +1,6 @@
 # SeekDock-owned deployment overlay. DeepSeek Harness remains unmodified.
-- id: llm-pi-ai
-  config:
-    providers:
-      deepseek:
-        apiKeyEnv: DEEPSEEK_API_KEY
-        displayName: Pi
-
+# Both agent backends share DSH's official model-provider directory. Pi changes
+# reaction-loop orchestration only; it does not add a duplicate LLM route.
 - insert:
     - id: agent-backend-pi
       name: "@seekdock/dsh-agent-backend-pi"

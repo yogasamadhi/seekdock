@@ -88,7 +88,7 @@ describe("real pinned DeepSeek Harness runtime", () => {
       expect(html).toContain("__DSH_BOOT__");
       expect(
         readFileSync(resolve(runtimeRoot, "seekdock.patch.yml"), "utf8"),
-      ).toContain("displayName: Pi");
+      ).not.toContain("displayName: Pi");
 
       const providers = await callRuntimeApi(ready.origin, "llm.providers");
       expect(providers).toMatchObject({
@@ -97,17 +97,26 @@ describe("real pinned DeepSeek Harness runtime", () => {
           value: {
             providers: expect.arrayContaining([
               {
+                provider: "deepseek-official",
+                displayName: "DeepSeek",
+                settingsNs: "llm-deepseek",
+                settingsPath: [],
+                active: true,
+                declared: false,
+              },
+              {
                 provider: "deepseek",
-                displayName: "Pi",
+                displayName: "deepseek",
                 settingsNs: "llm-pi-ai",
                 settingsPath: ["providers", "deepseek"],
-                active: true,
+                active: false,
                 declared: false,
               },
             ]),
           },
         },
       });
+
       const models = await callRuntimeApi(ready.origin, "llm.models");
       expect(models).toMatchObject({
         result: {
@@ -115,16 +124,26 @@ describe("real pinned DeepSeek Harness runtime", () => {
           value: {
             groups: expect.arrayContaining([
               {
-                id: "deepseek",
-                name: "Pi",
-                models: expect.arrayContaining([
-                  expect.objectContaining({ id: expect.any(String) }),
-                ]),
+                id: "deepseek-official",
+                name: "DeepSeek",
+                models: [
+                  expect.objectContaining({ id: "deepseek-v4-flash" }),
+                  expect.objectContaining({ id: "deepseek-v4-pro" }),
+                  expect.objectContaining({
+                    id: "deepseek-v4-flash-vision-exp",
+                  }),
+                ],
               },
             ]),
           },
         },
       });
+      const modelGroups = (
+        models as {
+          result: { value: { groups: Array<{ id: string }> } };
+        }
+      ).result.value.groups;
+      expect(modelGroups.some((group) => group.id === "deepseek")).toBe(false);
       const backends = await callRuntimeApi(ready.origin, "agentBackend.list");
       expect(backends).toMatchObject({
         result: {

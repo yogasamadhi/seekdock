@@ -20,7 +20,7 @@ import {
 const desktopDirectory = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const repositoryRoot = resolve(desktopDirectory, "../..");
 
-test("selects and restores the Pi agent backend and Pi model", async () => {
+test("selects and restores the Pi agent backend with the shared DeepSeek model catalog", async () => {
   const testRoot = mkdtempSync(resolve(tmpdir(), "seekdock-pi-selector-"));
   const userData = resolve(testRoot, "user-data");
   let electronApp: ElectronApplication | undefined;
@@ -63,18 +63,23 @@ test("selects and restores the Pi agent backend and Pi model", async () => {
     await trigger.click();
     await page.getByRole("menuitem", { name: /模型/u }).click();
 
-    const piGroup = page.getByRole("group", { name: "Pi" });
-    await expect(piGroup).toBeVisible();
-    const piModel = piGroup.getByRole("menuitemradio").first();
-    await expect(piModel).toBeVisible();
-    await piModel.click();
+    const deepSeekGroup = page.getByRole("group", { name: "DeepSeek" });
+    await expect(deepSeekGroup).toBeVisible();
+    await expect(deepSeekGroup.getByRole("menuitemradio")).toHaveCount(3);
+    await expect(page.getByRole("group", { name: "Pi" })).toHaveCount(0);
+    await deepSeekGroup
+      .getByRole("menuitemradio", {
+        name: "DeepSeek-V4-Flash-Vision-Exp",
+      })
+      .click();
 
     await trigger.click();
     await page.getByRole("menuitem", { name: /模型/u }).click();
     await expect(
-      page
-        .getByRole("group", { name: "Pi" })
-        .getByRole("menuitemradio", { checked: true }),
+      page.getByRole("group", { name: "DeepSeek" }).getByRole("menuitemradio", {
+        name: "DeepSeek-V4-Flash-Vision-Exp",
+        checked: true,
+      }),
     ).toHaveCount(1);
 
     await electronApp.close();
