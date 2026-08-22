@@ -27,8 +27,8 @@ describe("DeepSeek Harness Pi overlay", () => {
       "465cf1d2fa446209c7e83eae343d0b9dda0a8576",
     );
     expect(manifest.modules).toEqual({
-      "@seekdock/dsh-agent-backend-pi": "0.1.1-rc.1",
-      "@seekdock/dsh-client-ui-agent-backend": "0.1.1-rc.1",
+      "@seekdock/dsh-agent-backend-pi": "0.1.1-rc.2",
+      "@seekdock/dsh-client-ui-agent-backend": "0.1.1-rc.2",
     });
     expect(manifest.runtimePackages).toEqual({
       "@earendil-works/pi-agent-core": "0.84.2",

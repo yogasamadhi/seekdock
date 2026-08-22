@@ -59,8 +59,8 @@ describe("real pinned DeepSeek Harness runtime", () => {
       },
     });
     expect(runtimeManifest.deepSeekHarness.overlay.modules).toEqual({
-      "@seekdock/dsh-agent-backend-pi": "0.1.1-rc.1",
-      "@seekdock/dsh-client-ui-agent-backend": "0.1.1-rc.1",
+      "@seekdock/dsh-agent-backend-pi": "0.1.1-rc.2",
+      "@seekdock/dsh-client-ui-agent-backend": "0.1.1-rc.2",
     });
 
     const supervisor = new DshRuntimeSupervisor({

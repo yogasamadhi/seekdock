@@ -1,7 +1,7 @@
 {
   "name": "@seekdock/dsh-client-ui-agent-backend",
   "description": "Agent-backend surfaces for the default, the next Session, and the current Session label",
-  "version": "0.1.1-rc.1",
+  "version": "0.1.1-rc.2",
   "publishConfig": { "access": "public" },
   "repository": {
     "type": "git",

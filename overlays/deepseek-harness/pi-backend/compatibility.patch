@@ -24,7 +24,7 @@ index 6a5164f160..5971dde381 100644
    MessageId, ModelCatalogFailure, ModelProviderGroup, ModelReasoningEffort, ModelSelection,
    MuxFrame, PromptContentPart, QuestionResponsePayload, QueueAction, RpcError, RpcId, RpcReceipt,
 diff --git a/packages/bundle/base/package.json b/packages/bundle/base/package.json
-index 8b7058446f..552cfb22d8 100644
+index 2096a64b75..f381ff2a09 100644
 --- a/packages/bundle/base/package.json
 +++ b/packages/bundle/base/package.json
 @@ -44,6 +44,7 @@
@@ -36,7 +36,7 @@ index 8b7058446f..552cfb22d8 100644
      "@deepseek-ai/dsh-shell-env": "workspace:^",
      "@deepseek-ai/dsh-bash-sandbox": "workspace:^",
 diff --git a/packages/bundle/web-app/package.json b/packages/bundle/web-app/package.json
-index 920bd6d051..d66907eb8c 100644
+index 530192b0e4..4f5839701d 100644
 --- a/packages/bundle/web-app/package.json
 +++ b/packages/bundle/web-app/package.json
 @@ -54,6 +54,7 @@
@@ -171,7 +171,7 @@ index 7579310f49..beeaf95b55 100644
    projectionValues?: Readonly<Partial<SessionProjectionMap>>
    /** User interaction currently blocking this session, derived from live mux frames. */
 diff --git a/packages/client/runtime/src/client/sessions/manager.ts b/packages/client/runtime/src/client/sessions/manager.ts
-index bb8ed7bd6c..9d4cdaf462 100644
+index 13aa20d1c8..b696de3276 100644
 --- a/packages/client/runtime/src/client/sessions/manager.ts
 +++ b/packages/client/runtime/src/client/sessions/manager.ts
 @@ -3,7 +3,7 @@
@@ -183,7 +183,7 @@ index bb8ed7bd6c..9d4cdaf462 100644
    SessionSummary, SubagentAddress, SubagentCatalog, JobView, WorkspaceId,
  } from '@deepseek-ai/dsh-api-remotes/client'
  // Value import from the inline-safe wire layer (not the connection plugin):
-@@ -555,6 +555,7 @@ export class SessionManager {
+@@ -547,6 +547,7 @@ export class SessionManager {
            sessionId: result.value.sessionId, updatedAt: Date.now(), running: false, blank: true,
            ...(opts.cwd !== undefined ? { cwd: opts.cwd } : {}),
            ...(result.value.agentPreset !== undefined ? { agentPreset: result.value.agentPreset } : {}),
@@ -191,7 +191,7 @@ index bb8ed7bd6c..9d4cdaf462 100644
          } })
        } else {
          const publishedSessionId = workspaceAttachSessionId(result.error)
-@@ -631,6 +632,17 @@ export class SessionManager {
+@@ -623,6 +624,17 @@ export class SessionManager {
      } })
    }
  
@@ -209,7 +209,7 @@ index bb8ed7bd6c..9d4cdaf462 100644
    /** Apply immediately and retain for replay when a list response is in flight. */
    private recordMutation(mutation: SessionListMutation): void {
      this.listMutations?.push(mutation)
-@@ -741,6 +753,13 @@ export class SessionManager {
+@@ -733,6 +745,13 @@ export class SessionManager {
          }
        }
      }
@@ -223,7 +223,7 @@ index bb8ed7bd6c..9d4cdaf462 100644
      // List-level pending-interaction status (the sidebar amber dot): tracked
      // for every session, instantiated or not; stable keys make replays idempotent.
      if (frame.type === 'approval/requested') {
-@@ -810,6 +829,7 @@ export class SessionManager {
+@@ -802,6 +821,7 @@ export class SessionManager {
            ...(frame.origin !== undefined ? { origin: frame.origin } : {}),
            ...(frame.cwd !== undefined ? { cwd: frame.cwd } : {}),
            ...(frame.agentPreset !== undefined ? { agentPreset: frame.agentPreset } : {}),
@@ -231,7 +231,7 @@ index bb8ed7bd6c..9d4cdaf462 100644
          })
          this.sessions.get(frame.sessionId)?.handleBlank(frame.blank)
          if (frame.origin === 'subagent' && frame.parentSessionId !== undefined) {
-@@ -1052,6 +1072,7 @@ export class SessionManager {
+@@ -1044,6 +1064,7 @@ export class SessionManager {
        if (
          prev !== undefined && prev.updatedAt === entry.updatedAt && prev.running === entry.running
          && prev.blank === entry.blank && prev.agentPreset === entry.agentPreset
@@ -239,7 +239,7 @@ index bb8ed7bd6c..9d4cdaf462 100644
          && prev.parentSessionId === entry.parentSessionId && prev.cwd === entry.cwd
          && prev.origin === entry.origin && prev.title === entry.title && prev.depth === entry.depth
          && prev.pendingInteraction === entry.pendingInteraction
-@@ -1105,10 +1126,13 @@ function applyMutation(summaries: readonly SessionSummary[], mutation: SessionLi
+@@ -1097,10 +1118,13 @@ function applyMutation(summaries: readonly SessionSummary[], mutation: SessionLi
          // create echo, the select echo, a list row) reports the CURRENT one.
          ...(mutation.summary.agentPreset !== undefined
            ? { agentPreset: mutation.summary.agentPreset } : {}),
@@ -255,7 +255,7 @@ index bb8ed7bd6c..9d4cdaf462 100644
      }
      case 'remove':
 diff --git a/packages/client/runtime/src/client/sessions/service.ts b/packages/client/runtime/src/client/sessions/service.ts
-index 5e23b3a10a..3b2bcebff2 100644
+index c66da4e0d3..2b3b26f341 100644
 --- a/packages/client/runtime/src/client/sessions/service.ts
 +++ b/packages/client/runtime/src/client/sessions/service.ts
 @@ -16,7 +16,7 @@
@@ -287,7 +287,7 @@ index 5e23b3a10a..3b2bcebff2 100644
    /**
     * Clear the current selection so the layout shows the no-session empty
     * state (new-session affordance and the workspace preselection flow).
-@@ -688,6 +694,7 @@ export class SessionRuntime implements ISessions {
+@@ -683,6 +689,7 @@ export class SessionRuntime implements ISessions {
          ...(entry.parentSessionId !== undefined ? { parentId: entry.parentSessionId } : {}),
          ...(entry.origin !== undefined ? { origin: entry.origin } : {}),
          ...(entry.agentPreset !== undefined ? { agentPreset: entry.agentPreset } : {}),
@@ -1812,7 +1812,7 @@ index 08b22ffdef..ea57368632 100644
        'client-ui-conversation EnterBehaviorRow id \'composer-enter\'',
        'client-ui-permission-presets PermissionRow id \'permission\'',
 diff --git a/packages/extensions/tool-cordis/src/api-catalog.ts b/packages/extensions/tool-cordis/src/api-catalog.ts
-index c821662e85..0109c347e8 100644
+index 32e9ccbda6..19e456de6e 100644
 --- a/packages/extensions/tool-cordis/src/api-catalog.ts
 +++ b/packages/extensions/tool-cordis/src/api-catalog.ts
 @@ -111,9 +111,26 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
@@ -1844,7 +1844,7 @@ index c821662e85..0109c347e8 100644
          returns: 'the published running agent.',
        },
        {
-@@ -2846,7 +2863,27 @@ export const TYPE_API: readonly TypeApiEntry[] = [
+@@ -2847,7 +2864,27 @@ export const TYPE_API: readonly TypeApiEntry[] = [
    },
    {
      name: 'Agent',
@@ -1873,7 +1873,7 @@ index c821662e85..0109c347e8 100644
    },
    {
      name: 'AgentCancelCause',
-@@ -3182,7 +3219,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
+@@ -3183,7 +3220,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
    },
    {
      name: 'CreateAgentOptions',
@@ -1882,7 +1882,7 @@ index c821662e85..0109c347e8 100644
    },
    {
      name: 'CreateGoalRequest',
-@@ -3194,7 +3231,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
+@@ -3195,7 +3232,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
    },
    {
      name: 'CreateSessionOptions',
@@ -1891,7 +1891,7 @@ index c821662e85..0109c347e8 100644
    },
    {
      name: 'CreateTeamTaskRequest',
-@@ -3950,7 +3987,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
+@@ -3967,7 +4004,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
    },
    {
      name: 'ResumeAgentOptions',
@@ -1900,7 +1900,7 @@ index c821662e85..0109c347e8 100644
    },
    {
      name: 'RpcError',
-@@ -4130,7 +4167,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
+@@ -4147,7 +4184,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
    },
    {
      name: 'SessionHeader',
@@ -1910,7 +1910,7 @@ index c821662e85..0109c347e8 100644
    {
      name: 'SessionId',
 diff --git a/packages/host/apiproxy/package.json b/packages/host/apiproxy/package.json
-index 288eced683..8680fb42be 100644
+index 93a9e92a2c..5dfcdd29f8 100644
 --- a/packages/host/apiproxy/package.json
 +++ b/packages/host/apiproxy/package.json
 @@ -48,6 +48,7 @@
@@ -1922,7 +1922,7 @@ index 288eced683..8680fb42be 100644
      "@deepseek-ai/dsh-brand": "workspace:^",
      "@deepseek-ai/dsh-commands": "workspace:^",
 diff --git a/packages/host/apiproxy/src/api-proxy.ts b/packages/host/apiproxy/src/api-proxy.ts
-index e708353c00..ffe93b8100 100644
+index ba354e1173..3770b9fff2 100644
 --- a/packages/host/apiproxy/src/api-proxy.ts
 +++ b/packages/host/apiproxy/src/api-proxy.ts
 @@ -9,6 +9,11 @@ import { homedir } from 'node:os'
@@ -1937,7 +1937,7 @@ index e708353c00..ffe93b8100 100644
  import { installModelSelection } from '@deepseek-ai/dsh-agent'
  import type { Agent, ModelSelection, ModelSelectionRef, AgentOptions, AgentStatus } from '@deepseek-ai/dsh-agent'
  import type {} from '@deepseek-ai/dsh-agent-presets/types'
-@@ -18,7 +23,9 @@ import { contentHasImage, createUserMessage, freezeMessage, ReasoningEffortId }
+@@ -18,7 +23,9 @@ import { createUserMessage, freezeMessage, ReasoningEffortId } from '@deepseek-a
  import { errorChain } from '@deepseek-ai/dsh-llm'
  import type { ContentBlock, MessageSource } from '@deepseek-ai/dsh-llm'
  import { isAppendSurfaceEvent, isJsonValue } from '@deepseek-ai/dsh-session'
@@ -1946,9 +1946,9 @@ index e708353c00..ffe93b8100 100644
 +  AgentBackendId, JsonValue, Session, SessionEvent, SessionEventMap, SessionHeader, SessionId, UserMessage,
 +} from '@deepseek-ai/dsh-session'
  import type { SessionPersistence } from '@deepseek-ai/dsh-session-persistence'
- // Type-only: resolves the optional permission-default owner notified after
- // the Web proposes and the Host verifies a Workspace blank reuse target.
-@@ -488,6 +495,7 @@ function sessionListFields(header: SessionHeader, events: readonly SessionEvent[
+ import { SessionQueryError, type SessionSearchCursor } from '@deepseek-ai/dsh-session-query'
+ import { SubagentError } from '@deepseek-ai/dsh-subagent'
+@@ -478,6 +485,7 @@ function sessionListFields(header: SessionHeader, events: readonly SessionEvent[
    origin?: 'subagent'
    cwd?: string
    agentPreset?: string
@@ -1956,7 +1956,7 @@ index e708353c00..ffe93b8100 100644
  } {
    // The preset comes from the log, not the header: a session that switched
    // while blank ran its turns under the newer composition, and a picker
-@@ -498,6 +506,7 @@ function sessionListFields(header: SessionHeader, events: readonly SessionEvent[
+@@ -488,6 +496,7 @@ function sessionListFields(header: SessionHeader, events: readonly SessionEvent[
      ...header.origin === undefined ? {} : { origin: header.origin },
      ...header.cwd === undefined ? {} : { cwd: header.cwd },
      ...agentPreset === undefined ? {} : { agentPreset },
@@ -1964,7 +1964,7 @@ index e708353c00..ffe93b8100 100644
    }
  }
  
-@@ -992,6 +1001,21 @@ class AgentPresetConflict extends Error {
+@@ -982,6 +991,21 @@ class AgentPresetConflict extends Error {
    }
  }
  
@@ -1986,7 +1986,7 @@ index e708353c00..ffe93b8100 100644
  /** Requested identity already belongs to a session with another project cwd. */
  class SessionCwdConflict extends Error {
    constructor(
-@@ -1074,6 +1098,8 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
+@@ -1064,6 +1088,8 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
     * not enforcement: the wire is reachable directly.
     */
    const presetSwitches = new Map<SessionId, Promise<unknown>>()
@@ -1995,7 +1995,7 @@ index e708353c00..ffe93b8100 100644
    /** Client-chosen identity creation/resume, deduplicated across concurrent retries. */
    const sessionCreations = new Map<SessionId, Promise<Agent>>()
    /** Serializes path ownership and explicit title checks with Workspace mutations. */
-@@ -1159,6 +1185,16 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
+@@ -1149,6 +1175,16 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
      throw new AgentPresetConflict(sessionId, requested, existing)
    }
  
@@ -2012,7 +2012,7 @@ index e708353c00..ffe93b8100 100644
    /**
     * Resolve the preset an agent will be composed from, and the setup that
     * installs it.
-@@ -1571,6 +1607,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
+@@ -1561,6 +1597,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
      cwd: string,
      checkPersistedIdentity: boolean,
      presetId?: string,
@@ -2020,7 +2020,7 @@ index e708353c00..ffe93b8100 100644
    ): Promise<Agent> {
      let creation = sessionCreations.get(sessionId)
      if (creation === undefined) {
-@@ -1601,6 +1638,10 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
+@@ -1591,6 +1628,10 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
            // while blank ran every turn under the newer composition.
            const storedPreset = resolveSessionPreset({ header: inspected.meta, events: inspected.events })
            assertPresetUnchanged(sessionId, presetId, storedPreset)
@@ -2031,7 +2031,7 @@ index e708353c00..ffe93b8100 100644
            // The stored preset wins over anything the request names: a resumed
            // session's history was produced under that composition, and
            // rebuilding it differently would replay tool calls the model can no
-@@ -1620,6 +1661,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
+@@ -1610,6 +1651,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
          const composition = await composeAgent(presetId)
          return (await ctx.agents.create({
            sessionId,
@@ -2039,7 +2039,7 @@ index e708353c00..ffe93b8100 100644
            agentOptions: agentOptions(),
            meta: {
              cwd,
-@@ -1651,6 +1693,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
+@@ -1641,6 +1683,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
      // covers every path that yields a live agent — freshly created, adopted
      // live, resumed from disk, or recovered by the concurrent-creation catch.
      assertPresetUnchanged(sessionId, presetId, resolveSessionPreset(agent.session))
@@ -2047,19 +2047,14 @@ index e708353c00..ffe93b8100 100644
      if (agent.session.header.cwd !== cwd) {
        throw new SessionCwdConflict(sessionId, cwd, agent.session.header.cwd)
      }
-@@ -2101,13 +2144,20 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
+@@ -2091,8 +2134,15 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
          }
          const cwd = workspace?.path ?? request.payload.cwd ?? defaults.cwd
          const requestedPreset = request.payload.agentPreset
 +        const requestedBackend = request.payload.agentBackend
-         const refreshDefaultAfterReuse = request.payload.reuseWorkspaceBlank === true
-           && workspace !== undefined
-           && workspace.sessionIds.includes(sessionId)
-           && !ctx.workspaceRegistry.archivedSessionIds.includes(sessionId)
-         let adopted: Agent
          try {
--          adopted = await ensureSession(sessionId, cwd, request.payload.sessionId !== undefined, requestedPreset)
-+          adopted = await ensureSession(
+-          await ensureSession(sessionId, cwd, request.payload.sessionId !== undefined, requestedPreset)
++          await ensureSession(
 +            sessionId,
 +            cwd,
 +            request.payload.sessionId !== undefined,
@@ -2069,7 +2064,7 @@ index e708353c00..ffe93b8100 100644
          } catch (error: unknown) {
            if (error instanceof AgentPresetConflict) {
              return err(request, {
-@@ -2122,6 +2172,24 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
+@@ -2107,6 +2157,24 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
            }
            const refused = presetFailure(request, error)
            if (refused !== undefined) return refused
@@ -2094,12 +2089,12 @@ index e708353c00..ffe93b8100 100644
            if (error instanceof SessionCwdConflict) {
              return err(request, {
                code: 'session-conflict',
-@@ -2165,7 +2233,12 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
-         // echoing the header would contradict both the adoption this call just
+@@ -2148,7 +2216,12 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
          // allowed and the row `session.list` serves for the same session.
-         const createdPreset = resolveSessionPreset(adopted.session)
+         const created = ctx.agents.get(sessionId)
+         const createdPreset = created === undefined ? undefined : resolveSessionPreset(created.session)
 -        return ok(request, { sessionId, ...createdPreset === undefined ? {} : { agentPreset: createdPreset } })
-+        const createdBackend = resolveSessionBackend(adopted.session)
++        const createdBackend = created === undefined ? undefined : resolveSessionBackend(created.session)
 +        return ok(request, {
 +          sessionId,
 +          ...createdPreset === undefined ? {} : { agentPreset: createdPreset },
@@ -2108,7 +2103,7 @@ index e708353c00..ffe93b8100 100644
        },
  
        async history(request) {
-@@ -2292,6 +2365,8 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
+@@ -2263,6 +2336,8 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
        async fork(request) {
          const { sessionId, atSeq } = request.payload
          let source: SessionReadState
@@ -2117,7 +2112,7 @@ index e708353c00..ffe93b8100 100644
          try {
            source = await readSessionState(sessionId)
          } catch (error: unknown) {
-@@ -2304,6 +2379,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
+@@ -2275,6 +2350,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
              details: {},
            })
          }
@@ -2125,7 +2120,7 @@ index e708353c00..ffe93b8100 100644
          const events = source.events
          // An in-log anchor belongs to the turn containing it and must never
          // clip backward to an earlier completed turn. Omitted and past-end
-@@ -2351,6 +2427,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
+@@ -2322,6 +2398,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
          try {
            await ctx.agents.create({
              sessionId: childId,
@@ -2133,7 +2128,7 @@ index e708353c00..ffe93b8100 100644
              seed: events.slice(0, cut),
              meta: {
                ...source.header.cwd === undefined ? {} : { cwd: source.header.cwd },
-@@ -2665,6 +2742,8 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
+@@ -2636,6 +2713,8 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
  
        async prompt(request, signal) {
          const { parentSessionId, childSessionId, content, clientTimeZone } = request.payload
@@ -2142,7 +2137,7 @@ index e708353c00..ffe93b8100 100644
          const canonicalTimeZone = clientTimeZone === undefined
            ? undefined
            : canonicalClientTimeZone(clientTimeZone)
-@@ -2675,6 +2754,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
+@@ -2646,6 +2725,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
              details: { value: clientTimeZone },
            })
          }
@@ -2150,7 +2145,7 @@ index e708353c00..ffe93b8100 100644
          const parent = ctx.agents.get(parentSessionId)
          if (parent === undefined) {
            return err(request, {
-@@ -2988,6 +3068,67 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
+@@ -2959,6 +3039,67 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
        },
      },
  
@@ -2445,7 +2440,7 @@ index 0b5506b6b6..98e5dfc291 100644
    'attachment-error': { reason: string }
    'queue-item-not-found': { itemId: MessageId }
 diff --git a/packages/host/apiproxy/src/api/sessions.schema.ts b/packages/host/apiproxy/src/api/sessions.schema.ts
-index 930636915c..6652051439 100644
+index c415015776..4b3726f674 100644
 --- a/packages/host/apiproxy/src/api/sessions.schema.ts
 +++ b/packages/host/apiproxy/src/api/sessions.schema.ts
 @@ -6,7 +6,7 @@
@@ -2475,15 +2470,15 @@ index 930636915c..6652051439 100644
    projections: z.lazy(() => sessionProjectionsBlockSchema).optional(),
  }) as unknown as z.ZodType<Wire<SessionSummary>>
  
-@@ -105,6 +109,7 @@ export const sessionCreateRequestSchema = z.object({
+@@ -104,6 +108,7 @@ export const sessionCreateRequestSchema = z.object({
+   cwd: z.string().optional(),
    sessionId: sessionIdSchema.optional(),
    agentPreset: z.string().optional(),
-   reuseWorkspaceBlank: z.literal(true).optional(),
 +  agentBackend: agentBackendIdSchema.optional(),
  }).refine(
    payload => payload.workspaceId === undefined || payload.cwd === undefined,
    { message: 'session.create accepts workspaceId or cwd, not both' },
-@@ -118,6 +123,7 @@ export const sessionCreateRequestSchema = z.object({
+@@ -113,6 +118,7 @@ export const sessionCreateRequestSchema = z.object({
  export const sessionCreateValueSchema = z.object({
    sessionId: sessionIdSchema,
    agentPreset: z.string().optional(),
@@ -2492,7 +2487,7 @@ index 930636915c..6652051439 100644
  
  /** session.rename request payload (raw title; host-side normalization decides acceptance). */
 diff --git a/packages/host/apiproxy/src/api/sessions.ts b/packages/host/apiproxy/src/api/sessions.ts
-index 375d842047..a6c931ac90 100644
+index 6b5fadf248..cef87662bf 100644
 --- a/packages/host/apiproxy/src/api/sessions.ts
 +++ b/packages/host/apiproxy/src/api/sessions.ts
 @@ -7,7 +7,7 @@
@@ -2513,12 +2508,17 @@ index 375d842047..a6c931ac90 100644
    /**
     * Projection baseline for this row, with zero log loads: attached sessions
     * read the registry's live watermark cut; cold sessions read the persisted
-@@ -273,8 +275,8 @@ export interface SessionsApi {
-     sessionId?: SessionId
-     agentPreset?: string
-     reuseWorkspaceBlank?: true
--  }>):
+@@ -262,8 +264,13 @@ export interface SessionsApi {
+    * id fails with `agent-preset-not-found`, and a preset whose composition
+    * cannot be mounted fails with `agent-preset-invalid`.
+    */
+-  create(request: RpcRequest<{ workspaceId?: WorkspaceId; cwd?: string; sessionId?: SessionId; agentPreset?: string }>):
 -  Promise<RpcResponse<{ sessionId: SessionId; agentPreset?: string }>>
++  create(request: RpcRequest<{
++    workspaceId?: WorkspaceId
++    cwd?: string
++    sessionId?: SessionId
++    agentPreset?: string
 +    agentBackend?: AgentBackendId
 +  }>): Promise<RpcResponse<{ sessionId: SessionId; agentPreset?: string; agentBackend?: AgentBackendId }>>
  
@@ -2837,7 +2837,7 @@ index 77432c55af..83a7b5b50a 100644
      const api = fakeApi()
      api.host.pickDirectory = async (request) => {
 diff --git a/packages/host/apiproxy/tsconfig.json b/packages/host/apiproxy/tsconfig.json
-index a9b51c0ab6..6c6dcb07d5 100644
+index 3ed38b3d77..70fc10fb1f 100644
 --- a/packages/host/apiproxy/tsconfig.json
 +++ b/packages/host/apiproxy/tsconfig.json
 @@ -38,6 +38,9 @@
@@ -2851,7 +2851,7 @@ index a9b51c0ab6..6c6dcb07d5 100644
        "path": "../../core/agent-default-model"
      },
 diff --git a/packages/llm/llm-pi-ai/package.json b/packages/llm/llm-pi-ai/package.json
-index 52a6c21a57..ef833f403f 100644
+index 0fd59afaa1..ef3a0617a8 100644
 --- a/packages/llm/llm-pi-ai/package.json
 +++ b/packages/llm/llm-pi-ai/package.json
 @@ -43,7 +43,7 @@
@@ -2864,10 +2864,10 @@ index 52a6c21a57..ef833f403f 100644
    },
    "devDependencies": {
 diff --git a/packages/llm/llm-pi-ai/src/adapter.ts b/packages/llm/llm-pi-ai/src/adapter.ts
-index 3c7ecd4a91..fb4fceb43b 100644
+index f06b27a1ea..37d4ea48f6 100644
 --- a/packages/llm/llm-pi-ai/src/adapter.ts
 +++ b/packages/llm/llm-pi-ai/src/adapter.ts
-@@ -352,7 +352,7 @@ export class PiAiAdapter extends LlmAdapter {
+@@ -374,7 +374,7 @@ export class PiAiAdapter extends LlmAdapter {
          // Harness-owned and therefore win collisions.
          headers: requestHeaders(profile.headers),
        })
@@ -2934,10 +2934,10 @@ index 1e9b126dd5..b6983a3e64 100644
     * Whether the endpoint accepts `strict` in tool definitions;
     * `openai-completions`, the three Responses protocols, `bedrock-converse-stream`.
 diff --git a/packages/llm/llm-pi-ai/src/config.ts b/packages/llm/llm-pi-ai/src/config.ts
-index 62d49a58ee..691295aaf2 100644
+index 5fdcc2cdb2..b7e16abf4f 100644
 --- a/packages/llm/llm-pi-ai/src/config.ts
 +++ b/packages/llm/llm-pi-ai/src/config.ts
-@@ -235,6 +235,7 @@ const compatProfile: z<PiAiCompatProfile> = z.object({
+@@ -247,6 +247,7 @@ const compatProfile: z<PiAiCompatProfile> = z.object({
    supportsDeveloperRole: z.boolean(),
    supportsReasoningEffort: z.boolean(),
    supportsUsageInStreaming: z.boolean(),
@@ -2945,7 +2945,7 @@ index 62d49a58ee..691295aaf2 100644
    maxTokensField: z.union(MAX_TOKENS_FIELDS),
    requiresToolResultName: z.boolean(),
    requiresAssistantAfterToolResult: z.boolean(),
-@@ -242,6 +243,8 @@ const compatProfile: z<PiAiCompatProfile> = z.object({
+@@ -254,6 +255,8 @@ const compatProfile: z<PiAiCompatProfile> = z.object({
    requiresReasoningContentOnAssistantMessages: z.boolean(),
    thinkingFormat: z.union(SUPPORTED_THINKING_FORMATS),
    chatTemplateKwargs: z.dict(chatTemplateKwarg),
@@ -3006,10 +3006,10 @@ index d45df45a39..71712b5670 100644
        // no default: AssistantMessageEvent is pi-ai's closed union; a new
        // event type should fail compilation here via tsc's exhaustiveness
 diff --git a/packages/llm/llm-pi-ai/tests/adapter.spec.ts b/packages/llm/llm-pi-ai/tests/adapter.spec.ts
-index a36a180f7d..80fb3e3949 100644
+index e2ed0233d9..1c9b9d5104 100644
 --- a/packages/llm/llm-pi-ai/tests/adapter.spec.ts
 +++ b/packages/llm/llm-pi-ai/tests/adapter.spec.ts
-@@ -106,7 +106,7 @@ describe('PiAiAdapter provider routing', () => {
+@@ -132,7 +132,7 @@ describe('PiAiAdapter provider routing', () => {
      expect(server.requests[0]).toMatchObject({
        model: 'deepseek-v4-flash',
        temperature: 0.2,
@@ -3018,7 +3018,7 @@ index a36a180f7d..80fb3e3949 100644
        thinking: { type: 'enabled' },
        reasoning_effort: 'max',
      })
-@@ -426,6 +426,7 @@ describe('provider profile lifecycle', () => {
+@@ -481,6 +481,7 @@ describe('provider profile lifecycle', () => {
          reasoning: {
            efforts: [
              { id: ReasoningEffortId('off'), name: 'Off' },
@@ -3040,10 +3040,10 @@ index 99886cdbaf..d08c55eeb0 100644
      const model = modelOf({
        deepseek: { models: [{ id: catalogModel.id, reasoningEfforts: { off: null, high: 'high' } }] },
 diff --git a/packages/llm/llm-pi-ai/tests/convert.spec.ts b/packages/llm/llm-pi-ai/tests/convert.spec.ts
-index 2a3b41b0c4..e741050dd6 100644
+index c540f2d50b..0083802ee0 100644
 --- a/packages/llm/llm-pi-ai/tests/convert.spec.ts
 +++ b/packages/llm/llm-pi-ai/tests/convert.spec.ts
-@@ -721,6 +721,15 @@ describe('toStreamChunks', () => {
+@@ -754,6 +754,15 @@ describe('toStreamChunks', () => {
  })
  
  describe('mapStopReason / mapUsage', () => {
@@ -3566,7 +3566,7 @@ index d7f1c3ffc7..1cf4a5e79c 100644
      await runtime.flush()
      expect(runtime.sessions.list.getSnapshot().current).toBe('s1')
 diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml
-index d190033b4f..fef96cc447 100644
+index 737a21eea6..c0fa3c99b2 100644
 --- a/pnpm-lock.yaml
 +++ b/pnpm-lock.yaml
 @@ -411,7 +411,7 @@ importers:
@@ -3707,7 +3707,7 @@ index d190033b4f..fef96cc447 100644
        '@deepseek-ai/dsh-api-remotes':
          specifier: workspace:^
          version: link:../../api/remotes
-@@ -5532,8 +5617,8 @@ importers:
+@@ -5538,8 +5623,8 @@ importers:
          specifier: link:../../../vendor/schemastery
          version: link:../../../vendor/schemastery
        '@earendil-works/pi-ai':
@@ -3718,7 +3718,7 @@ index d190033b4f..fef96cc447 100644
      devDependencies:
        '@deepseek-ai/cordis':
          specifier: workspace:^
-@@ -8006,7 +8091,7 @@ importers:
+@@ -8012,7 +8097,7 @@ importers:
          version: link:../loader-smoke
        vitest:
          specifier: ^4.1.8
@@ -3727,7 +3727,7 @@ index d190033b4f..fef96cc447 100644
      devDependencies:
        '@deepseek-ai/cordis':
          specifier: workspace:^
-@@ -9650,11 +9735,19 @@ packages:
+@@ -9659,11 +9744,19 @@ packages:
        search-insights:
          optional: true
  
@@ -3749,7 +3749,7 @@ index d190033b4f..fef96cc447 100644
    '@emnapi/core@1.10.0':
      resolution: {integrity: sha512-yq6OkJ4p82CAfPl0u9mQebQHKPJkY7WrIuk205cTYnYe+k2Z8YBh11FrbRG/H6ihirqcacOgl2BIO8oyMQLeXw==}
  
-@@ -10483,14 +10576,6 @@ packages:
+@@ -10492,14 +10585,6 @@ packages:
    '@mermaid-js/parser@1.2.0':
      resolution: {integrity: sha512-oYPyv8A4As1yH5Bx+04iQEQxXuIQDe0GKCNSRgao6z8AM9jixXIfP0vsppRLvGf+nKIOb9/LdpWA4YuJiVvESA==}
  
@@ -3764,7 +3764,7 @@ index d190033b4f..fef96cc447 100644
    '@mixmark-io/domino@2.2.0':
      resolution: {integrity: sha512-Y28PR25bHXUg88kCV7nivXrP2Nj2RueZ3/l/jdx6J9f8J4nsEGcgX0Qe6lt7Pa+J79+kPiJU3LguR6O/6zrLOw==}
  
-@@ -12831,6 +12916,10 @@ packages:
+@@ -12840,6 +12925,10 @@ packages:
      resolution: {integrity: sha512-eAmLkjDjAFCVXg7A1unxHsLf961m6y17QFqXqAXGj/gVkKFrEICfStRfwUlGNfeCEjNRa32JEWOUTlYXPyyKvA==}
      engines: {node: '>=14'}
  
@@ -3775,7 +3775,7 @@ index d190033b4f..fef96cc447 100644
    gopd@1.2.0:
      resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
      engines: {node: '>= 0.4'}
-@@ -12904,6 +12993,10 @@ packages:
+@@ -12913,6 +13002,10 @@ packages:
      resolution: {integrity: sha512-hsBTNUqQTDwkWtcdYI2i06Y/nUBEsNEDJKjWdigLvegy8kDuJAS8uRlpkkcQpyEXL0Z/pjDy5HBmMjRCJ2gq+g==}
      engines: {node: '>= 4'}
  
@@ -3786,7 +3786,7 @@ index d190033b4f..fef96cc447 100644
    immediate@3.0.6:
      resolution: {integrity: sha512-XXOFtyqDjNDAQxVfYxuF7g9Il/IbWmmlQg2MYKOH8ExIT1qg6xc4zyS3HaEEATgs1btfzxq15ciUiY7gjSXRGQ==}
  
-@@ -13385,8 +13478,8 @@ packages:
+@@ -13394,8 +13487,8 @@ packages:
    mdn-data@2.27.1:
      resolution: {integrity: sha512-9Yubnt3e8A0OKwxYSXyhLymGW4sCufcLG6VdiDdUGVkPhpqLxlvP5vl1983gQjJl3tqbrM731mjaZaP68AgosQ==}
  
@@ -3797,7 +3797,7 @@ index d190033b4f..fef96cc447 100644
      engines: {node: '>= 0.8'}
  
    merge-descriptors@2.0.0:
-@@ -13638,13 +13731,12 @@ packages:
+@@ -13647,13 +13740,12 @@ packages:
    oniguruma-to-es@4.3.6:
      resolution: {integrity: sha512-csuQ9x3Yr0cEIs/Zgx/OEt9iBw9vqIunAPQkx19R/fiMq2oGVTgcMqO/V3Ybqefr1TBvosI6jU539ksaBULJyA==}
  
@@ -3815,7 +3815,7 @@ index d190033b4f..fef96cc447 100644
      peerDependencies:
        ws: ^8.18.0
        zod: ^3.25 || ^4.0
-@@ -13797,6 +13889,10 @@ packages:
+@@ -13806,6 +13898,10 @@ packages:
      resolution: {integrity: sha512-dM0jVuXJPsDN6DvRpea484tCUaMiXWjuCn++HGTqUWzGDjv5tZkEZldAJ/UMlqRYGFrD/etByo4/xOuC/snX2A==}
      engines: {node: '>=20'}
  
@@ -3826,7 +3826,7 @@ index d190033b4f..fef96cc447 100644
    preact@10.29.7:
      resolution: {integrity: sha512-DCHYrK/B10yUD3ZjLfhZ3WIE/9Vf9VFUODcRE2dRomTYDpJk6z6L9wecSfhfE6M9ZTHUdyQkoC46arIDhEV84Q==}
      peerDependencies:
-@@ -14284,8 +14380,8 @@ packages:
+@@ -14293,8 +14389,8 @@ packages:
      resolution: {integrity: sha512-faYHw0anBbc/kWF3zFTEnxSFOAGUX9GFbOBthvDdLsIlEoWOFOtS0zgCiQYwIskL9iGXZL3kAXD8OoZ4GmMATA==}
      engines: {node: '>= 18'}
  
@@ -3837,7 +3837,7 @@ index d190033b4f..fef96cc447 100644
  
    typescript-language-server@5.3.0:
      resolution: {integrity: sha512-5puofxZHgFdAYtfNpmwCAvgtaYgg8wrUnH30m7Ze3QuguId5RNRadKASpOpyDxTyUdAF51FjhTdjntLw/EuWcQ==}
-@@ -14643,8 +14739,8 @@ packages:
+@@ -14652,8 +14748,8 @@ packages:
        utf-8-validate:
          optional: true
  
@@ -3848,7 +3848,7 @@ index d190033b4f..fef96cc447 100644
      engines: {node: '>=20'}
  
    xml-name-validator@5.0.0:
-@@ -15333,19 +15429,35 @@ snapshots:
+@@ -15342,19 +15438,35 @@ snapshots:
      transitivePeerDependencies:
        - '@algolia/client-search'
  
@@ -3888,7 +3888,7 @@ index d190033b4f..fef96cc447 100644
      transitivePeerDependencies:
        - '@modelcontextprotocol/sdk'
        - bufferutil
-@@ -15354,6 +15466,8 @@ snapshots:
+@@ -15363,6 +15475,8 @@ snapshots:
        - ws
        - zod
  
@@ -3897,7 +3897,7 @@ index d190033b4f..fef96cc447 100644
    '@emnapi/core@1.10.0':
      dependencies:
        '@emnapi/wasi-threads': 1.2.1
-@@ -15895,18 +16009,6 @@ snapshots:
+@@ -15904,18 +16018,6 @@ snapshots:
      dependencies:
        '@chevrotain/types': 11.1.2
  
@@ -3916,7 +3916,7 @@ index d190033b4f..fef96cc447 100644
    '@mixmark-io/domino@2.2.0': {}
  
    '@modelcontextprotocol/sdk@1.29.0(zod@4.4.3)':
-@@ -18070,7 +18172,7 @@ snapshots:
+@@ -18079,7 +18181,7 @@ snapshots:
    gcp-metadata@8.1.2:
      dependencies:
        gaxios: 7.1.5
@@ -3925,7 +3925,7 @@ index d190033b4f..fef96cc447 100644
        json-bigint: 1.0.0
      transitivePeerDependencies:
        - supports-color
-@@ -18147,6 +18249,8 @@ snapshots:
+@@ -18156,6 +18258,8 @@ snapshots:
  
    google-logging-utils@1.1.3: {}
  
@@ -3934,7 +3934,7 @@ index d190033b4f..fef96cc447 100644
    gopd@1.2.0: {}
  
    hachure-fill@0.5.2: {}
-@@ -18227,6 +18331,8 @@ snapshots:
+@@ -18236,6 +18340,8 @@ snapshots:
  
    ignore@5.3.2: {}
  
@@ -3943,7 +3943,7 @@ index d190033b4f..fef96cc447 100644
    immediate@3.0.6: {}
  
    immer@10.2.0: {}
-@@ -18739,7 +18845,7 @@ snapshots:
+@@ -18748,7 +18854,7 @@ snapshots:
  
    mdn-data@2.27.1: {}
  
@@ -3952,7 +3952,7 @@ index d190033b4f..fef96cc447 100644
  
    merge-descriptors@2.0.0: {}
  
-@@ -19103,16 +19209,16 @@ snapshots:
+@@ -19112,16 +19218,16 @@ snapshots:
        regex: 6.1.0
        regex-recursion: 6.0.2
  
@@ -3973,7 +3973,7 @@ index d190033b4f..fef96cc447 100644
      optionalDependencies:
        ws: 8.21.0
        zod: 4.4.3
-@@ -19297,6 +19403,8 @@ snapshots:
+@@ -19306,6 +19412,8 @@ snapshots:
  
    powershell-utils@0.1.0: {}
  
@@ -3982,7 +3982,7 @@ index d190033b4f..fef96cc447 100644
    preact@10.29.7: {}
  
    prelude-ls@1.2.1: {}
-@@ -19857,10 +19965,10 @@ snapshots:
+@@ -19866,10 +19974,10 @@ snapshots:
    type-is@2.1.0:
      dependencies:
        content-type: 2.0.0
@@ -3995,7 +3995,7 @@ index d190033b4f..fef96cc447 100644
  
    typescript-language-server@5.3.0:
      dependencies:
-@@ -20069,7 +20177,7 @@ snapshots:
+@@ -20078,7 +20186,7 @@ snapshots:
        - typescript
        - universal-cookie
  
@@ -4004,7 +4004,7 @@ index d190033b4f..fef96cc447 100644
      dependencies:
        '@vitest/expect': 4.1.8
        '@vitest/mocker': 4.1.8(vite@6.4.3(@types/node@22.20.0)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0))
-@@ -20092,43 +20200,13 @@ snapshots:
+@@ -20101,43 +20209,13 @@ snapshots:
        vite: 6.4.3(@types/node@22.20.0)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0)
        why-is-node-running: 2.3.0
      optionalDependencies:
@@ -4049,7 +4049,7 @@ index d190033b4f..fef96cc447 100644
    vitest@4.1.8(@opentelemetry/api@1.9.1)(@types/node@22.20.0)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1)(vite@8.0.16(@types/node@22.20.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0)):
      dependencies:
        '@vitest/expect': 4.1.8
-@@ -20261,7 +20339,7 @@ snapshots:
+@@ -20270,7 +20348,7 @@ snapshots:
  
    ws@8.21.0: {}
  
@@ -4073,7 +4073,7 @@ index ec6cfd3af9..e98dfb8745 100644
    - node-addon-require-builtin-darwin-arm64@0.1.4
    - node-addon-require-builtin-darwin-x64@0.1.4
 diff --git a/scripts/gen-cordis-catalog.ts b/scripts/gen-cordis-catalog.ts
-index 136d9301b3..dce9f4eefb 100644
+index 522e98df96..3090665030 100644
 --- a/scripts/gen-cordis-catalog.ts
 +++ b/scripts/gen-cordis-catalog.ts
 @@ -226,6 +226,9 @@ export const LINK_MAP: Readonly<Record<string, string>> = {

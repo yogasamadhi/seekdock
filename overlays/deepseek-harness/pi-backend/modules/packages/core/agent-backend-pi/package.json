@@ -1,7 +1,7 @@
 {
   "name": "@seekdock/dsh-agent-backend-pi",
   "description": "Pi reaction-loop backend for the DeepSeek Harness Agent runtime",
-  "version": "0.1.1-rc.1",
+  "version": "0.1.1-rc.2",
   "publishConfig": {
     "access": "public"
   },

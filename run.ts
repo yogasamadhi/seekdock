@@ -5,14 +5,14 @@ import { dirname, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import {
+  DSH_COMMIT,
   isBunVersionSupported,
   MINIMUM_BUN_VERSION,
+  OPENCODE_COMMIT,
+  PI_COMMIT,
 } from "./scripts/constants.mjs";
 
 const PNPM_VERSION = "11.7.0";
-const DSH_COMMIT = "141eb6fef83422698aef7a981029e843e8161534";
-const OPENCODE_COMMIT = "b155b15694dbcc6768f11d2f25cc2bdd1f738ab4";
-const PI_COMMIT = "914cf1472e715297caa30db4b9535d534a9eb718";
 
 const repositoryRoot = dirname(fileURLToPath(import.meta.url));
 const dshRoot = resolve(repositoryRoot, "vendor/deepseek-harness");

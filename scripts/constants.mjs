@@ -2,7 +2,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const MINIMUM_BUN_VERSION = "1.3.14";
-export const DSH_COMMIT = "528c682e061696f5a160f363f236ecbf53cbd006";
+export const DSH_COMMIT = "b150a551b8d465e31e418e1b2eaf5e79bbb7d28e";
 export const DSH_KOFFI_VERSION = "3.1.1";
 export const OPENCODE_COMMIT = "b155b15694dbcc6768f11d2f25cc2bdd1f738ab4";
 export const PI_COMMIT = "914cf1472e715297caa30db4b9535d534a9eb718";
