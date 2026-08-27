@@ -1,6 +1,13 @@
 import { createHash } from "node:crypto";
-import { cpSync, mkdirSync, readFileSync, readdirSync, rmSync } from "node:fs";
-import { relative, resolve, sep } from "node:path";
+import {
+  cpSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { extract } from "tar";
 import { DSH_COMMIT, dshRoot, repositoryRoot } from "./constants.mjs";
 import { capture, run } from "./process.mjs";
@@ -81,7 +88,7 @@ export async function materializePatchedDshSource(target) {
       ["archive", "--format=tar", `--output=${archivePath}`, DSH_COMMIT],
       { cwd: dshRoot },
     );
-    await extract({ file: archivePath, cwd: sourceRoot, strict: true });
+    await extractGitArchive(archivePath, sourceRoot);
     rmSync(archivePath, { force: true });
     cpSync(dshOverlayModulesRoot, sourceRoot, { recursive: true });
 
@@ -109,6 +116,38 @@ export async function materializePatchedDshSource(target) {
     rmSync(buildParent, { recursive: true, force: true });
     await assertDshVendorPristine();
     throw error;
+  }
+}
+
+async function extractGitArchive(archivePath, sourceRoot) {
+  const emulatedSymlinks = [];
+  await extract({
+    file: archivePath,
+    cwd: sourceRoot,
+    strict: true,
+    filter: (path, entry) => {
+      if (process.platform !== "win32" || entry.type !== "SymbolicLink") {
+        return true;
+      }
+      emulatedSymlinks.push({ path, linkpath: entry.linkpath });
+      return false;
+    },
+  });
+
+  for (const entry of emulatedSymlinks) {
+    const destination = resolve(sourceRoot, entry.path);
+    const relativeDestination = relative(sourceRoot, destination);
+    if (
+      relativeDestination === ".." ||
+      relativeDestination.startsWith(`..${sep}`) ||
+      isAbsolute(relativeDestination)
+    ) {
+      throw new Error(
+        `DSH archive link escapes its destination: ${entry.path}`,
+      );
+    }
+    mkdirSync(dirname(destination), { recursive: true });
+    writeFileSync(destination, entry.linkpath, "utf8");
   }
 }
 

@@ -68,7 +68,9 @@ describe("DeepSeek Harness Pi overlay", () => {
   it("exports and patches a disposable copy without changing vendor", async () => {
     const sourceRoot = await materializePatchedDshSource(target);
     try {
-      expect(sourceRoot).toContain(`.runtime/build/${target}/deepseek-harness`);
+      expect(sourceRoot).toBe(
+        resolve(".runtime/build", target, "deepseek-harness"),
+      );
       expect(
         existsSync(
           resolve(sourceRoot, "packages/core/agent-backend-pi/src/index.ts"),

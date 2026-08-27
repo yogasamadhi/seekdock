@@ -1,1 +1,2 @@
+overlays/deepseek-harness/pi-backend/** text eol=lf
 overlays/deepseek-harness/pi-backend/compatibility.patch -whitespace
